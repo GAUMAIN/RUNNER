@@ -207,5 +207,9 @@ public sealed class PlayerStats : Component
 		_dirty = true;
 		EventBus.Publish( new PlayerCurrencyChanged( SteamId(), "coins", amount, Coins ) );
 		Log.Info( $"[Runner] +{amount} coins (total: {Coins})" );
+
+		// Coins are a rare, high-value event — skip the throttle and persist now.
+		if ( _profileLoaded )
+			_ = SaveProfileAsync();
 	}
 }
