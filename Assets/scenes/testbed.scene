@@ -119,6 +119,17 @@
           "StepHeight": 18
         },
         {
+          "__type": "Runner.Player.PlayerStats",
+          "__guid": "b8d8a622-6182-407f-b82a-3bb398ab0890",
+          "BaseXpPerLevel": 100,
+          "XpGrowth": 1.10,
+          "BaseSpeedMultiplier": 1.0,
+          "SpeedGainPerLevel": 0.03,
+          "UnitsPerXp": 100.0,
+          "Xp": 0,
+          "Level": 1
+        },
+        {
           "__type": "Runner.Player.PlayerPawn",
           "__guid": "42058498-43e0-4284-9815-09daee8f5322",
           "Body": {

@@ -99,6 +99,22 @@ public sealed class PlayerPawn : Component
 			cc.Velocity = cc.Velocity.WithZ( 0 );
 
 		ClampToAntiCheatCeiling( cc );
+		GrantRunXp( cc );
+	}
+
+	/// <summary>Convert distance covered while running on the ground into XP.</summary>
+	private void GrantRunXp( CharacterController cc )
+	{
+		if ( !IsRunning || !cc.IsOnGround )
+			return;
+
+		var stats = GameObject.Components.Get<PlayerStats>();
+		if ( !stats.IsValid() )
+			return;
+
+		float horizontalSpeed = cc.Velocity.WithZ( 0 ).Length;
+		float distanceThisTick = horizontalSpeed * Time.Delta;
+		stats.GrantXpForDistance( distanceThisTick );
 	}
 
 	private void BuildWishVelocity()
@@ -110,7 +126,14 @@ public sealed class PlayerPawn : Component
 		if ( !WishVelocity.IsNearZeroLength )
 			WishVelocity = WishVelocity.Normal;
 
-		WishVelocity *= Input.Down( "Run" ) ? RunSpeed : WalkSpeed;
+		float speed = Input.Down( "Run" ) ? RunSpeed : WalkSpeed;
+
+		// Apply level-based multiplier — long-term speed scaling lives in PlayerStats.
+		var stats = GameObject.Components.Get<PlayerStats>();
+		if ( stats.IsValid() )
+			speed *= stats.SpeedMultiplier;
+
+		WishVelocity *= speed;
 	}
 
 	private void HandleLookInput()
