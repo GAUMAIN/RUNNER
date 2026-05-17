@@ -1,0 +1,91 @@
+@using System
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Runner.Player
+@namespace Runner.UI
+@inherits PanelComponent
+
+<root>
+
+	@if ( _stats.IsValid() )
+	{
+		<div class="hud-top">
+			<div class="level-card">
+				<div class="label">LEVEL</div>
+				<div class="value">@_stats.Level</div>
+			</div>
+
+			<div class="xp-block">
+				<div class="xp-text">
+					<span class="xp-current">@FormatNumber( _xpInLevel )</span>
+					<span class="xp-sep">/</span>
+					<span class="xp-needed">@FormatNumber( _xpNeeded )</span>
+					<span class="xp-label">XP</span>
+				</div>
+				<div class="xp-bar">
+					<div class="xp-bar-fill" style="width: @(XpPercent.ToString( "0.00", System.Globalization.CultureInfo.InvariantCulture ))%;"></div>
+				</div>
+				<div class="mult">×@_stats.SpeedMultiplier.ToString( "0.00", System.Globalization.CultureInfo.InvariantCulture ) SPEED</div>
+			</div>
+		</div>
+
+		<div class="speedometer">
+			<div class="speed-value">@((int)_speed)</div>
+			<div class="speed-unit">u/s</div>
+		</div>
+	}
+	else
+	{
+		<div class="searching">searching for local player…</div>
+	}
+
+</root>
+
+@code
+{
+	private PlayerStats _stats;
+	private PlayerPawn _pawn;
+	private float _speed;
+	private long _xpInLevel;
+	private long _xpNeeded = 100;
+
+	public float XpPercent => _xpNeeded <= 0 ? 0f : ((float)_xpInLevel / _xpNeeded) * 100f;
+
+	protected override void OnUpdate()
+	{
+		if ( !_stats.IsValid() || !_pawn.IsValid() )
+			ResolveLocalPlayer();
+
+		if ( _stats.IsValid() )
+		{
+			var (cur, need) = _stats.GetLevelProgress();
+			_xpInLevel = cur;
+			_xpNeeded = need;
+		}
+
+		if ( _pawn.IsValid() )
+		{
+			var cc = _pawn.GameObject.Components.Get<CharacterController>();
+			if ( cc.IsValid() )
+				_speed = cc.Velocity.WithZ( 0 ).Length;
+		}
+	}
+
+	private void ResolveLocalPlayer()
+	{
+		_stats = Scene.GetAllComponents<PlayerStats>().FirstOrDefault( s => !s.IsProxy );
+		_pawn = Scene.GetAllComponents<PlayerPawn>().FirstOrDefault( p => !p.IsProxy );
+	}
+
+	private static string FormatNumber( long n )
+	{
+		if ( n >= 1_000_000 ) return (n / 1_000_000.0).ToString( "0.0", System.Globalization.CultureInfo.InvariantCulture ) + "M";
+		if ( n >= 10_000 )    return (n / 1_000.0).ToString( "0.0", System.Globalization.CultureInfo.InvariantCulture ) + "K";
+		return n.ToString();
+	}
+
+	// Rebuild the panel only when these change.
+	protected override int BuildHash()
+		=> HashCode.Combine( _stats?.Level ?? 0, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid() );
+}

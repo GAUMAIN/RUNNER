@@ -167,6 +167,37 @@
           "Components": []
         }
       ]
+    },
+    {
+      "__guid": "9556d78f-da51-4946-b70b-4b21096525c6",
+      "Flags": 0,
+      "Name": "Screen UI",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.ScreenPanel",
+          "__guid": "fba72573-6ef9-4c01-88f9-cdac2b92252c",
+          "AutoScreenScale": true,
+          "Opacity": 1,
+          "Scale": 1,
+          "ScaleStrategy": "FollowDesktopScaling",
+          "ZIndex": 100
+        }
+      ],
+      "Children": [
+        {
+          "__guid": "8bf46c13-2eaf-47ef-8a1b-5fb9c8eaa08d",
+          "Flags": 0,
+          "Name": "HUD",
+          "Enabled": true,
+          "Components": [
+            {
+              "__type": "Runner.UI.HudPanel",
+              "__guid": "2ef0f060-daee-4769-8105-a8bc6ae6ff7b"
+            }
+          ]
+        }
+      ]
     }
   ],
   "SceneProperties": {
