@@ -60,6 +60,15 @@
           "Viewport": "0,0,1,1",
           "ZFar": 25000,
           "ZNear": 5
+        },
+        {
+          "__type": "Runner.VFX.CameraSpeedFx",
+          "__guid": "c7fd461e-cd5b-4dde-a167-da174fd88527",
+          "BaseFov": 80.0,
+          "MaxFov": 110.0,
+          "SpeedAtBase": 320.0,
+          "SpeedAtMax": 1500.0,
+          "Damping": 6.0
         }
       ]
     },

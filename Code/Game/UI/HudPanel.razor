@@ -7,6 +7,8 @@
 
 <root>
 
+	<div class="speed-vignette" style="opacity: @(VignetteOpacity.ToString( "0.000", System.Globalization.CultureInfo.InvariantCulture ));"></div>
+
 	@if ( _stats.IsValid() )
 	{
 		<div class="hud-top">
@@ -50,6 +52,22 @@
 	private long _xpNeeded = 100;
 
 	public float XpPercent => _xpNeeded <= 0 ? 0f : ((float)_xpInLevel / _xpNeeded) * 100f;
+
+	// Vignette ramps in between VignetteStart and VignetteFull speeds, capped at MaxOpacity.
+	private const float VignetteStart = 400f;
+	private const float VignetteFull = 2000f;
+	private const float MaxOpacity = 0.75f;
+
+	public float VignetteOpacity
+	{
+		get
+		{
+			if ( _speed <= VignetteStart ) return 0f;
+			float t = (_speed - VignetteStart) / (VignetteFull - VignetteStart);
+			if ( t > 1f ) t = 1f;
+			return t * MaxOpacity;
+		}
+	}
 
 	protected override void OnUpdate()
 	{

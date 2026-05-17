@@ -27,6 +27,21 @@ HudPanel
 	}
 
 	// ───────────────────────────────────────────────────────────────────────
+	// Speed vignette — cyan halo on screen edges, intensity scales with speed
+	// ───────────────────────────────────────────────────────────────────────
+	.speed-vignette
+	{
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		pointer-events: none;
+		background-image: radial-gradient( circle at 50% 50%, rgba(0,229,255,0) 35%, rgba(0,229,255,0.18) 70%, rgba(0,229,255,0.55) 100% );
+		mix-blend-mode: screen;
+	}
+
+	// ───────────────────────────────────────────────────────────────────────
 	// Top-left: Level card + XP bar + multiplier
 	// ───────────────────────────────────────────────────────────────────────
 	.hud-top
