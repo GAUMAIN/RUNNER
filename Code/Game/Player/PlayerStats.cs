@@ -1,4 +1,8 @@
+using System;
+using System.Threading.Tasks;
 using Sandbox;
+using Runner.Backend;
+using Runner.Config;
 using Runner.Data;
 using Runner.Events;
 using Runner.Systems;
@@ -24,6 +28,14 @@ public sealed class PlayerStats : Component
 	[Sync] public long Xp { get; set; }
 	[Sync] public int Level { get; set; } = 1;
 
+	// ── Persistence ──────────────────────────────────────────────────────────
+	private static readonly IProfileRepository Repo = new LocalProfileRepository();
+
+	private ulong _profileId;
+	private bool _profileLoaded;
+	private bool _dirty;
+	private TimeSince _timeSinceSave;
+
 	// ── Derived (don't store, always compute) ────────────────────────────────
 	public float SpeedMultiplier
 		=> SpeedCurve.MultiplierAtLevel( Level, BaseSpeedMultiplier, SpeedGainPerLevel );
@@ -32,6 +44,94 @@ public sealed class PlayerStats : Component
 	{
 		var (_, current, needed) = XpCurve.ComputeLevel( Xp, BaseXpPerLevel, XpGrowth );
 		return (current, needed);
+	}
+
+	// ── Lifecycle: load on enable, save on disable ───────────────────────────
+
+	protected override void OnEnabled()
+	{
+		base.OnEnabled();
+		if ( IsProxy )
+			return;
+
+		_profileId = ResolveProfileId();
+		_ = LoadProfileAsync();
+	}
+
+	protected override void OnDisabled()
+	{
+		base.OnDisabled();
+		if ( IsProxy )
+			return;
+
+		if ( _profileLoaded && _dirty )
+			_ = SaveProfileAsync();
+	}
+
+	protected override void OnUpdate()
+	{
+		if ( IsProxy )
+			return;
+		if ( !_profileLoaded || !_dirty )
+			return;
+		if ( _timeSinceSave < GameConfig.ProfileSaveThrottleSeconds )
+			return;
+
+		_ = SaveProfileAsync();
+	}
+
+	private async Task LoadProfileAsync()
+	{
+		try
+		{
+			var profile = await Repo.LoadAsync( _profileId );
+			if ( profile is not null )
+			{
+				Xp = profile.Xp;
+				Level = Math.Max( 1, profile.Level );
+				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP" );
+			}
+			else
+			{
+				Log.Info( $"[Runner] No saved profile, starting fresh." );
+			}
+		}
+		catch ( Exception ex )
+		{
+			Log.Warning( $"[Runner] Profile load threw: {ex.Message}" );
+		}
+		finally
+		{
+			_profileLoaded = true;
+		}
+	}
+
+	private async Task SaveProfileAsync()
+	{
+		try
+		{
+			var profile = new PlayerProfile
+			{
+				PlayerId = _profileId,
+				Xp = Xp,
+				Level = Level,
+				LastSeenAt = DateTime.UtcNow,
+			};
+			await Repo.SaveAsync( profile );
+			_dirty = false;
+			_timeSinceSave = 0;
+		}
+		catch ( Exception ex )
+		{
+			Log.Warning( $"[Runner] Profile save threw: {ex.Message}" );
+		}
+	}
+
+	private ulong ResolveProfileId()
+	{
+		// Single-player / local: bucket everything under id 0 (=> "local").
+		// Multiplayer: wire to Network.Owner.SteamId once the session layer exists.
+		return 0UL;
 	}
 
 	// ── XP gain ──────────────────────────────────────────────────────────────
@@ -74,6 +174,7 @@ public sealed class PlayerStats : Component
 		Level = newLevel;
 
 		EventBus.Publish( new PlayerXpGranted( SteamId(), amount, reason ) );
+		_dirty = true;
 
 		if ( newLevel > oldLevel )
 		{
