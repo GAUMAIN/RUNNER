@@ -3,21 +3,25 @@
 @using Sandbox.UI
 @using System.Linq
 @using Runner.Player
+@using Runner.Events
+@using Runner.Systems
 @inherits PanelComponent
 
 <root>
 
 	<div class="speed-vignette" style="opacity: @(VignetteOpacity.ToString( "0.000", System.Globalization.CultureInfo.InvariantCulture ));"></div>
 
+	<div class="level-up-flash @(IsFlashing ? "active" : "")"></div>
+
 	@if ( _stats.IsValid() )
 	{
 		<div class="hud-top">
-			<div class="level-card">
+			<div class="level-card @(IsFlashing ? "pulse" : "")">
 				<div class="label">LEVEL</div>
 				<div class="value">@_stats.Level</div>
 			</div>
 
-			<div class="xp-block">
+			<div class="xp-block @(IsFlashing ? "pulse" : "")">
 				<div class="xp-text">
 					<span class="xp-current">@FormatNumber( _xpInLevel )</span>
 					<span class="xp-sep">/</span>
@@ -45,11 +49,36 @@
 
 @code
 {
+	[Property] public SoundEvent LevelUpSound { get; set; }
+
 	private PlayerStats _stats = null;
 	private PlayerPawn _pawn = null;
 	private float _speed;
 	private long _xpInLevel;
 	private long _xpNeeded = 100;
+
+	private TimeSince _timeSinceLevelUp = 999f;
+	private const float FlashDuration = 0.6f;
+	public bool IsFlashing => _timeSinceLevelUp < FlashDuration;
+
+	protected override void OnEnabled()
+	{
+		base.OnEnabled();
+		EventBus.Subscribe<PlayerLeveledUp>( OnLevelUp );
+	}
+
+	protected override void OnDisabled()
+	{
+		base.OnDisabled();
+		EventBus.Unsubscribe<PlayerLeveledUp>( OnLevelUp );
+	}
+
+	private void OnLevelUp( PlayerLeveledUp evt )
+	{
+		_timeSinceLevelUp = 0f;
+		if ( LevelUpSound is not null )
+			Sound.Play( LevelUpSound );
+	}
 
 	public float XpPercent => _xpNeeded <= 0 ? 0f : ((float)_xpInLevel / _xpNeeded) * 100f;
 
@@ -106,6 +135,6 @@
 	protected override int BuildHash()
 	{
 		int level = _stats.IsValid() ? _stats.Level : 0;
-		return HashCode.Combine( level, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid() );
+		return HashCode.Combine( level, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid(), IsFlashing );
 	}
 }

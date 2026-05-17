@@ -42,6 +42,42 @@ HudPanel
 	}
 
 	// ───────────────────────────────────────────────────────────────────────
+	// Level-up flash — full-screen cyan flash that fades out on level up
+	// ───────────────────────────────────────────────────────────────────────
+	.level-up-flash
+	{
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		pointer-events: none;
+		background-color: rgba(0, 229, 255, 0);
+		mix-blend-mode: screen;
+		transition: background-color 0.55s ease-out;
+
+		&.active
+		{
+			background-color: rgba(0, 229, 255, 0.55);
+			transition: background-color 0.05s ease-in;
+		}
+	}
+
+	// Triggered class on the level card + xp block when a level up fires
+	.level-card.pulse,
+	.xp-block.pulse
+	{
+		animation: hud-pulse 0.6s ease-out;
+	}
+
+	@keyframes hud-pulse
+	{
+		0%   { transform: scale(1);     box-shadow: 0 0 0   rgba(0, 229, 255, 0); }
+		20%  { transform: scale(1.08);  box-shadow: 0 0 32px rgba(0, 229, 255, 0.85); }
+		100% { transform: scale(1);     box-shadow: 0 0 0   rgba(0, 229, 255, 0); }
+	}
+
+	// ───────────────────────────────────────────────────────────────────────
 	// Top-left: Level card + XP bar + multiplier
 	// ───────────────────────────────────────────────────────────────────────
 	.hud-top
