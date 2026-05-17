@@ -4,35 +4,29 @@
   "Org": "local",
   "Ident": "runner",
   "Schema": 1,
+  "IncludeSourceFiles": false,
+  "Resources": "/Assets/*",
   "PackageReferences": [],
   "EditorReferences": null,
-  "Resources": "/Assets/*",
-  "CodePath": "/Code/",
-  "MenuResource": null,
-  "RootNamespace": "Runner",
-  "Compiler": {
-    "RootNamespace": "Runner",
-    "DefineConstants": "SANDBOX;ADDON;DEBUG",
-    "NoWarn": "1701;1702;1591;",
-    "WarningsAsErrors": "",
-    "Whitelist": true,
-    "AssemblyReferences": [],
-    "IgnoreFolders": [
-      "obj",
-      "bin",
-      ".vs",
-      ".idea",
-      ".cache"
-    ],
-    "DistinctAssemblyReferences": []
-  },
-  "Tags": "speed runner multiplayer simulator race progression rebirth",
-  "Summary": "Live-service speed simulator. Run, rebirth, race, repeat.",
-  "Description": "RUNNER is a multiplayer speed simulator built on S&box. Race for XP, increase your speed, unlock zones, collect pets, upgrade gear, and rebirth for exponential progression. Inspired by the best speed sims and idle progression games.",
-  "Public": false,
-  "ProjectVersion": 1,
-  "GameSettings": {
+  "Mounts": null,
+  "IsStandaloneOnly": false,
+  "Metadata": {
     "MaxPlayers": 64,
-    "Tickrate": 64
+    "MinPlayers": 1,
+    "GameNetworkType": "Multiplayer",
+    "MapSelect": "Unrestricted",
+    "MapList": [],
+    "RankType": "None",
+    "PerMapRanking": false,
+    "LeaderboardType": "None",
+    "GameCategory": "Action",
+    "ProjectTemplate": null,
+    "CsProjName": "",
+    "HttpAllowList": null,
+    "TickRate": 64,
+    "StartupScene": "scenes/testbed.scene",
+    "MapStartupScene": null,
+    "LaunchMode": "Normal",
+    "ControlModes": {}
   }
 }

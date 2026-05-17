@@ -1,0 +1,192 @@
+{
+  "__guid": "1e217719-348c-4747-8ae1-16e560b2a2e7",
+  "GameObjects": [
+    {
+      "__guid": "df7c8c8b-2c00-40a2-82fa-b9279905a4f3",
+      "Flags": 0,
+      "Name": "Scene Information",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.SceneInformation",
+          "__guid": "cabfbc9b-42d6-4f00-a499-990342ea9c82",
+          "Description": "RUNNER testbed — spawn, walk, jump.",
+          "SceneTags": "",
+          "Title": "Testbed"
+        }
+      ]
+    },
+    {
+      "__guid": "8c1a74cb-d164-462a-811b-5294f76197ab",
+      "Flags": 0,
+      "Name": "Sun",
+      "Position": "0,0,200",
+      "Rotation": "-0.06201506,0.5347982,0.2700481,0.7982603",
+      "Tags": "light_directional,light",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.DirectionalLight",
+          "__guid": "4b7cd675-de6a-4eb9-8164-509473776644",
+          "FogMode": "Enabled",
+          "FogStrength": 1,
+          "LightColor": "0.91373,0.98039,1,1",
+          "Shadows": true,
+          "SkyColor": "0.05882,0.07451,0.08235,1"
+        }
+      ]
+    },
+    {
+      "__guid": "85220204-5265-499e-ae48-293f3d4181fe",
+      "Flags": 0,
+      "Name": "Camera",
+      "Position": "-300,0,150",
+      "Rotation": "0,0,0,1",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.CameraComponent",
+          "__guid": "88670d2a-f5b1-4b27-ab9c-142ae3e78363",
+          "BackgroundColor": "0.18,0.20,0.24,1",
+          "ClearFlags": "All",
+          "FieldOfView": 80,
+          "IsMainCamera": true,
+          "Orthographic": false,
+          "OrthographicHeight": 1204,
+          "Priority": 1,
+          "RenderExcludeTags": "",
+          "RenderTags": "",
+          "TargetEye": "None",
+          "Viewport": "0,0,1,1",
+          "ZFar": 25000,
+          "ZNear": 5
+        }
+      ]
+    },
+    {
+      "__guid": "a4d272d2-d186-4f7e-b0ba-fa0f96b495cd",
+      "Flags": 0,
+      "Name": "Ground",
+      "Position": "0,0,-50",
+      "Scale": "200,200,1",
+      "Tags": "solid",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.ModelRenderer",
+          "__guid": "654b9d30-bbd0-4962-a7b7-eecbb1a10a70",
+          "BodyGroups": 18446744073709551615,
+          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "Model": "models/dev/box.vmdl",
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "RenderType": "On",
+          "Tint": "1,1,1,1"
+        },
+        {
+          "__type": "Sandbox.BoxCollider",
+          "__guid": "b18f8408-866e-474e-9edc-cd29518a69cc",
+          "Center": "0,0,0",
+          "IsTrigger": false,
+          "Scale": "50,50,50",
+          "Static": true,
+          "SurfaceVelocity": "0,0,0"
+        }
+      ]
+    },
+    {
+      "__guid": "b7612dd7-067b-4dba-b602-a374191dbbb3",
+      "Flags": 0,
+      "Name": "Player",
+      "Position": "0,0,64",
+      "Rotation": "0,0,0,1",
+      "Tags": "player",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.CharacterController",
+          "__guid": "c42e5453-e3da-46b5-8b83-bafbebae66bf",
+          "Acceleration": 10,
+          "Bounciness": 0,
+          "GroundAngle": 45,
+          "Height": 64,
+          "IgnoreLayers": "",
+          "Radius": 16,
+          "StepHeight": 18
+        },
+        {
+          "__type": "Runner.Player.PlayerPawn",
+          "__guid": "42058498-43e0-4284-9815-09daee8f5322",
+          "Body": {
+            "_type": "gameobject",
+            "go": "877ed8bb-2ced-4a39-84a7-18e5b5b4342d"
+          },
+          "Eye": {
+            "_type": "gameobject",
+            "go": "4ac6896a-0f36-438c-aa94-59c7602f551f"
+          },
+          "FirstPerson": true,
+          "Gravity": "0,0,800",
+          "WalkSpeed": 110,
+          "RunSpeed": 320,
+          "JumpStrength": 322
+        }
+      ],
+      "Children": [
+        {
+          "__guid": "877ed8bb-2ced-4a39-84a7-18e5b5b4342d",
+          "Flags": 0,
+          "Name": "Body",
+          "Position": "0,0,0",
+          "Rotation": "0,0,0,1",
+          "Enabled": true,
+          "Components": []
+        },
+        {
+          "__guid": "4ac6896a-0f36-438c-aa94-59c7602f551f",
+          "Flags": 0,
+          "Name": "Eye",
+          "Position": "0,0,60",
+          "Rotation": "0,0,0,1",
+          "Enabled": true,
+          "Components": []
+        }
+      ]
+    }
+  ],
+  "SceneProperties": {
+    "FixedUpdateFrequency": 64,
+    "MaxFixedUpdates": 5,
+    "NetworkFrequency": 64,
+    "NetworkInterpolation": true,
+    "PhysicsSubSteps": 1,
+    "ThreadedAnimation": true,
+    "TimeScale": 1,
+    "UseFixedUpdate": true,
+    "Metadata": {
+      "Title": "Testbed",
+      "Description": "RUNNER testbed — spawn, walk, jump."
+    },
+    "NavMesh": {
+      "Enabled": false,
+      "IncludeStaticBodies": true,
+      "IncludeKeyframedBodies": true,
+      "EditorAutoUpdate": true,
+      "AgentHeight": 64,
+      "AgentRadius": 16,
+      "AgentStepSize": 18,
+      "AgentMaxSlope": 40,
+      "ExcludedBodies": "",
+      "IncludedBodies": ""
+    }
+  },
+  "ResourceVersion": 2,
+  "Title": "Testbed",
+  "Description": "RUNNER testbed — spawn, walk, jump.",
+  "__references": [],
+  "__version": 2
+}

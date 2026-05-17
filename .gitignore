@@ -22,7 +22,12 @@ shaderdb/
 
 # S&box editor scratch
 local/
+.sbox/
 .sbox-cache/
+.vscode/
+*.slnx
+Code/Properties/
+Localization/
 
 # ────────────────────────────────────────────────────────────────────────────
 # C# / .NET

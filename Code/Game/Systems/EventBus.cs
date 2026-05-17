@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Sandbox;
 
 namespace Runner.Systems;
 
@@ -42,7 +43,7 @@ public static class EventBus
 			}
 			catch ( Exception ex )
 			{
-				Sandbox.Log.Error( $"[EventBus] handler for {typeof( T ).Name} threw: {ex}" );
+				Log.Error( $"[EventBus] handler for {typeof( T ).Name} threw: {ex}" );
 			}
 		}
 	}
