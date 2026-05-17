@@ -397,45 +397,20 @@
           "Tint": "0.2,1,0.4,1"
         },
         {
-          "__type": "Sandbox.BoxCollider",
-          "__guid": "7f4feba8-fc2a-40e0-a9c1-3d2e64b6708a",
-          "__enabled": true,
-          "Flags": 0,
-          "Center": "0,0,100",
-          "ColliderFlags": 0,
-          "Elasticity": null,
-          "Friction": null,
-          "IsTrigger": true,
-          "OnComponentDestroy": null,
-          "OnComponentDisabled": null,
-          "OnComponentEnabled": null,
-          "OnComponentFixedUpdate": null,
-          "OnComponentStart": null,
-          "OnComponentUpdate": null,
-          "OnObjectTriggerEnter": null,
-          "OnObjectTriggerExit": null,
-          "OnTriggerEnter": null,
-          "OnTriggerExit": null,
-          "RollingResistance": null,
-          "Scale": "100,100,500",
-          "Static": false,
-          "Surface": null,
-          "SurfaceVelocity": "0,0,0"
-        },
-        {
           "__type": "Runner.World.CashOutPad",
           "__guid": "cea54f6a-77a6-48f1-b582-2ad124cba426",
           "__enabled": true,
           "Flags": 0,
           "CoinReward": 5,
-          "CooldownSeconds": 1,
+          "CooldownSeconds": 1.5,
           "OnComponentDestroy": null,
           "OnComponentDisabled": null,
           "OnComponentEnabled": null,
           "OnComponentFixedUpdate": null,
           "OnComponentStart": null,
           "OnComponentUpdate": null,
-          "SpawnPosition": "0,0,64"
+          "SpawnPosition": "0,0,64",
+          "TriggerRadius": 80
         }
       ],
       "Children": []
