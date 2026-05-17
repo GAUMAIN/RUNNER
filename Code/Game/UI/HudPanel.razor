@@ -33,6 +33,14 @@
 				</div>
 				<div class="mult">×@_stats.SpeedMultiplier.ToString( "0.00", System.Globalization.CultureInfo.InvariantCulture ) SPEED</div>
 			</div>
+
+			<div class="coins-block">
+				<div class="coin-icon">●</div>
+				<div class="coin-text">
+					<div class="coin-value">@FormatNumber( _stats.HeldCoins )</div>
+					<div class="coin-label">HELD</div>
+				</div>
+			</div>
 		</div>
 
 		<div class="speedometer">
@@ -135,6 +143,7 @@
 	protected override int BuildHash()
 	{
 		int level = _stats.IsValid() ? _stats.Level : 0;
-		return HashCode.Combine( level, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid(), IsFlashing );
+		long heldCoins = _stats.IsValid() ? _stats.HeldCoins : 0;
+		return HashCode.Combine( level, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid(), IsFlashing, heldCoins );
 	}
 }

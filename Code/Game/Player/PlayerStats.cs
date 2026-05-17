@@ -28,6 +28,9 @@ public sealed class PlayerStats : Component
 	[Sync] public long Xp { get; set; }
 	[Sync] public int Level { get; set; } = 1;
 
+	/// <summary>Coins collected in the current run. NOT persisted — cashed out at the end-of-level pad.</summary>
+	[Sync] public long HeldCoins { get; set; }
+
 	// ── Persistence ──────────────────────────────────────────────────────────
 	private static readonly IProfileRepository Repo = new LocalProfileRepository();
 
@@ -187,5 +190,18 @@ public sealed class PlayerStats : Component
 	{
 		var conn = Network.Owner;
 		return conn is null ? 0UL : conn.SteamId;
+	}
+
+	// ── Coins (in-run, not persisted) ────────────────────────────────────────
+
+	public void GrantHeldCoins( long amount )
+	{
+		if ( IsProxy )
+			return;
+		if ( amount <= 0 )
+			return;
+
+		HeldCoins += amount;
+		EventBus.Publish( new PlayerCurrencyChanged( SteamId(), "held_coins", amount, HeldCoins ) );
 	}
 }

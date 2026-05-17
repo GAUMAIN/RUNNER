@@ -119,6 +119,47 @@ HudPanel
 		}
 	}
 
+	.coins-block
+	{
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 18px;
+		background-color: $panel-bg;
+		border: 1px solid $panel-stroke;
+		border-radius: 8px;
+		backdrop-filter: blur( 12px );
+
+		.coin-icon
+		{
+			font-size: 34px;
+			color: #ffd64a;
+			text-shadow: 0 0 14px rgba(255, 214, 74, 0.7);
+		}
+
+		.coin-text
+		{
+			flex-direction: column;
+			gap: 2px;
+
+			.coin-value
+			{
+				font-size: 24px;
+				font-weight: 700;
+				color: #ffd64a;
+				text-shadow: 0 0 10px rgba(255, 214, 74, 0.5);
+				line-height: 1;
+			}
+
+			.coin-label
+			{
+				font-size: 10px;
+				letter-spacing: 2px;
+				color: $text-dim;
+			}
+		}
+	}
+
 	.xp-block
 	{
 		flex-direction: column;
