@@ -145,6 +145,15 @@
           "WalkSpeed": 110,
           "RunSpeed": 320,
           "JumpStrength": 322
+        },
+        {
+          "__type": "Runner.Audio.FootstepSystem",
+          "__guid": "9b91c4ce-9f0c-481d-b69a-0d23d5760303",
+          "MinSpeedToStep": 30.0,
+          "StepIntervalAtWalk": 0.45,
+          "StepIntervalAtRun": 0.28,
+          "MinStepInterval": 0.08,
+          "Volume": 1.0
         }
       ],
       "Children": [
