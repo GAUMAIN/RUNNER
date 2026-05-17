@@ -1,5 +1,4 @@
 using System;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Sandbox;
@@ -10,17 +9,13 @@ namespace Runner.Backend;
 /// <summary>
 /// Persists <see cref="PlayerProfile"/> as JSON in S&amp;box's per-user <c>FileSystem.Data</c>.
 /// One file per player id: <c>profiles/{id}.json</c>.
+/// Uses S&amp;box's whitelisted JSON writer (FileSystem.Data.WriteJson / ReadJson) — the bare
+/// System.Text.Json reflection path NRE'd inside the sandbox.
 /// Swap with a cloud-backed implementation later — callers depend on <see cref="IProfileRepository"/> only.
 /// </summary>
 public sealed class LocalProfileRepository : IProfileRepository
 {
 	private const string DirName = "profiles";
-
-	private static readonly JsonSerializerOptions JsonOpts = new()
-	{
-		WriteIndented = true,
-		PropertyNameCaseInsensitive = true,
-	};
 
 	private static string FileNameFor( ulong playerId )
 		=> $"{DirName}/{(playerId == 0UL ? "local" : playerId.ToString())}.json";
@@ -33,8 +28,7 @@ public sealed class LocalProfileRepository : IProfileRepository
 			if ( !FileSystem.Data.FileExists( path ) )
 				return Task.FromResult<PlayerProfile>( null );
 
-			var json = FileSystem.Data.ReadAllText( path );
-			var profile = JsonSerializer.Deserialize<PlayerProfile>( json, JsonOpts );
+			var profile = FileSystem.Data.ReadJson<PlayerProfile>( path );
 			return Task.FromResult( profile );
 		}
 		catch ( Exception ex )
@@ -55,12 +49,11 @@ public sealed class LocalProfileRepository : IProfileRepository
 				FileSystem.Data.CreateDirectory( DirName );
 
 			profile.LastSeenAt = DateTime.UtcNow;
-			var json = JsonSerializer.Serialize( profile, JsonOpts );
-			FileSystem.Data.WriteAllText( FileNameFor( profile.PlayerId ), json );
+			FileSystem.Data.WriteJson( FileNameFor( profile.PlayerId ), profile );
 		}
 		catch ( Exception ex )
 		{
-			Log.Error( $"[LocalProfileRepository] Save failed for {profile.PlayerId}: {ex.Message}" );
+			Log.Error( $"[LocalProfileRepository] Save failed for {profile.PlayerId}: {ex.Message}\n{ex.StackTrace}" );
 		}
 		return Task.CompletedTask;
 	}

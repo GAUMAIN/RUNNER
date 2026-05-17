@@ -17,6 +17,7 @@ obj/
 
 # Source 2 compiled assets (regenerated on build)
 *_c
+*_d
 compiled/
 shaderdb/
 

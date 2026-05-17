@@ -29,6 +29,8 @@ public sealed class CashOutPad : Component, Component.ITriggerListener
 
 	void Component.ITriggerListener.OnTriggerEnter( Collider other )
 	{
+		Log.Info( $"[CashOutPad] trigger by {other.GameObject?.Name} (IsProxy={IsProxy})" );
+
 		if ( IsProxy )
 			return;
 		if ( _timeSinceTrigger < CooldownSeconds )
@@ -36,11 +38,17 @@ public sealed class CashOutPad : Component, Component.ITriggerListener
 
 		var pawn = FindPawnOn( other.GameObject );
 		if ( !pawn.IsValid() )
+		{
+			Log.Info( "[CashOutPad] no PlayerPawn on entering hierarchy — ignored" );
 			return;
+		}
 
 		var stats = pawn.GameObject.Components.Get<PlayerStats>();
 		if ( !stats.IsValid() )
+		{
+			Log.Info( "[CashOutPad] PlayerStats missing — ignored" );
 			return;
+		}
 
 		stats.GrantCoins( CoinReward );
 		TeleportPawn( pawn, SpawnPosition );
