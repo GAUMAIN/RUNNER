@@ -3,7 +3,6 @@
 @using Sandbox.UI
 @using System.Linq
 @using Runner.Player
-@namespace Runner.UI
 @inherits PanelComponent
 
 <root>
@@ -44,8 +43,8 @@
 
 @code
 {
-	private PlayerStats _stats;
-	private PlayerPawn _pawn;
+	private PlayerStats _stats = null;
+	private PlayerPawn _pawn = null;
 	private float _speed;
 	private long _xpInLevel;
 	private long _xpNeeded = 100;
@@ -87,5 +86,8 @@
 
 	// Rebuild the panel only when these change.
 	protected override int BuildHash()
-		=> HashCode.Combine( _stats?.Level ?? 0, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid() );
+	{
+		int level = _stats.IsValid() ? _stats.Level : 0;
+		return HashCode.Combine( level, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid() );
+	}
 }

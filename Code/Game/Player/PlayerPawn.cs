@@ -32,7 +32,7 @@ public sealed class PlayerPawn : Component
 	public Vector3 WishVelocity { get; private set; }
 
 	[Sync] public Angles EyeAngles { get; set; }
-	[Sync] public bool IsRunning { get; set; }
+	[Sync] public bool IsSprinting { get; set; }
 
 	protected override void OnEnabled()
 	{
@@ -56,7 +56,7 @@ public sealed class PlayerPawn : Component
 		{
 			HandleLookInput();
 			DriveCamera();
-			IsRunning = Input.Down( "Run" );
+			IsSprinting = Input.Down( "Run" );
 		}
 
 		RotateBodyToVelocity();
@@ -105,7 +105,7 @@ public sealed class PlayerPawn : Component
 	/// <summary>Convert distance covered while running on the ground into XP.</summary>
 	private void GrantRunXp( CharacterController cc )
 	{
-		if ( !IsRunning || !cc.IsOnGround )
+		if ( !IsSprinting || !cc.IsOnGround )
 			return;
 
 		var stats = GameObject.Components.Get<PlayerStats>();
