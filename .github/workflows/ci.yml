@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Format check — fails the build on style violations
+  # ──────────────────────────────────────────────────────────────────────────
+  format:
+    name: Format (dotnet format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Verify formatting
+        run: |
+          if ls *.csproj 1> /dev/null 2>&1 || ls **/*.csproj 1> /dev/null 2>&1; then
+            dotnet format --verify-no-changes --severity warn
+          else
+            echo "No .csproj yet (S&box generates one). Skipping format check."
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Static analysis — only useful once we have a .csproj
+  # ──────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build & Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: |
+          if ls *.csproj 1> /dev/null 2>&1 || ls **/*.csproj 1> /dev/null 2>&1; then
+            dotnet restore
+          else
+            echo "No .csproj yet. Skipping restore."
+          fi
+      - name: Build
+        run: |
+          if ls *.csproj 1> /dev/null 2>&1 || ls **/*.csproj 1> /dev/null 2>&1; then
+            dotnet build --no-restore --configuration Release -warnaserror
+          else
+            echo "No .csproj yet. Skipping build."
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Tests
+  # ──────────────────────────────────────────────────────────────────────────
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Run tests
+        run: |
+          if [ -d tests ] && ls tests/**/*.csproj 1> /dev/null 2>&1; then
+            dotnet test --configuration Release --logger "trx;LogFileName=test-results.trx"
+          else
+            echo "No tests yet. Skipping."
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Sanity: required project files exist
+  # ──────────────────────────────────────────────────────────────────────────
+  structure:
+    name: Project structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required files
+        run: |
+          for f in RUNNER.sbproj README.md LICENSE ARCHITECTURE.md .gitignore .editorconfig; do
+            test -f "$f" || (echo "Missing: $f" && exit 1)
+          done
+          echo "✓ All required files present"

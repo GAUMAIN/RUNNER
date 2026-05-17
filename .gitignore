@@ -1,0 +1,75 @@
+# ────────────────────────────────────────────────────────────────────────────
+# S&box / Source 2
+# ────────────────────────────────────────────────────────────────────────────
+.cache/
+.vs/
+.idea/
+.vscode/
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.csproj.user
+*.csproj
+*.sln
+*.sln.docstates
+
+# Source 2 compiled assets (regenerated on build)
+*_c
+compiled/
+shaderdb/
+
+# S&box editor scratch
+local/
+.sbox-cache/
+
+# ────────────────────────────────────────────────────────────────────────────
+# C# / .NET
+# ────────────────────────────────────────────────────────────────────────────
+[Dd]ebug/
+[Rr]elease/
+[Bb]uild/
+[Bb]uilds/
+[Ll]og/
+[Ll]ogs/
+*.swp
+*.pdb
+*.dll.config
+*.cache
+*.exe.config
+
+# ────────────────────────────────────────────────────────────────────────────
+# OS / IDE
+# ────────────────────────────────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+*.lnk
+
+# ────────────────────────────────────────────────────────────────────────────
+# Secrets / local config (never commit)
+# ────────────────────────────────────────────────────────────────────────────
+*.secret
+*.key
+*.pfx
+.env
+.env.local
+secrets/
+tools/local/
+
+# ────────────────────────────────────────────────────────────────────────────
+# Generated/large binary content (use Git LFS if needed)
+# ────────────────────────────────────────────────────────────────────────────
+*.bsp
+*.vpk
+*.zip
+*.7z
+*.rar
+
+# Coverage / test artifacts
+coverage/
+TestResults/
+*.coverage
