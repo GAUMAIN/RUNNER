@@ -15,10 +15,10 @@ public sealed class PlayerStats : Component
 	[Property] public long BaseXpPerLevel { get; set; } = 100;
 	[Property] public float XpGrowth { get; set; } = 1.10f;
 	[Property] public float BaseSpeedMultiplier { get; set; } = 1f;
-	[Property] public float SpeedGainPerLevel { get; set; } = 0.03f;
+	[Property] public float SpeedGainPerLevel { get; set; } = 0.06f;
 
 	/// <summary>How many run-units travelled grants 1 XP. Lower = faster leveling.</summary>
-	[Property] public float UnitsPerXp { get; set; } = 100f;
+	[Property] public float UnitsPerXp { get; set; } = 30f;
 
 	// ── Replicated state (server writes, all read) ───────────────────────────
 	[Sync] public long Xp { get; set; }
@@ -36,17 +36,28 @@ public sealed class PlayerStats : Component
 
 	// ── XP gain ──────────────────────────────────────────────────────────────
 
+	// Sub-XP fractional accumulator. Each tick adds a few units; we only commit
+	// whole XP once the accumulator crosses UnitsPerXp. Without this, integer
+	// truncation per-tick would drop every grant to 0.
+	private float _runUnitsAccumulator;
+
 	/// <summary>Convert distance run into XP. Called by PlayerPawn per fixed tick while running.</summary>
 	public void GrantXpForDistance( float units )
 	{
+		if ( IsProxy )
+			return;
 		if ( units <= 0f || UnitsPerXp <= 0f )
 			return;
 
-		long xp = (long)(units / UnitsPerXp);
-		if ( xp <= 0 )
+		_runUnitsAccumulator += units;
+		if ( _runUnitsAccumulator < UnitsPerXp )
 			return;
 
-		GrantXp( xp, "run" );
+		long xp = (long)(_runUnitsAccumulator / UnitsPerXp);
+		_runUnitsAccumulator -= xp * UnitsPerXp;
+
+		if ( xp > 0 )
+			GrantXp( xp, "run" );
 	}
 
 	public void GrantXp( long amount, string reason )

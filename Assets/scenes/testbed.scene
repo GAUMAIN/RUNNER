@@ -124,8 +124,8 @@
           "BaseXpPerLevel": 100,
           "XpGrowth": 1.10,
           "BaseSpeedMultiplier": 1.0,
-          "SpeedGainPerLevel": 0.03,
-          "UnitsPerXp": 100.0,
+          "SpeedGainPerLevel": 0.06,
+          "UnitsPerXp": 30.0,
           "Xp": 0,
           "Level": 1
         },
