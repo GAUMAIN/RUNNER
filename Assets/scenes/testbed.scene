@@ -187,104 +187,37 @@
       ]
     },
     {
-      "__guid": "6ea1f42b-b63f-4b90-9cb2-a4ffe5aba80c",
+      "__guid": "751a0153-68d6-4a30-baf4-54dc3a926c4b",
       "Flags": 0,
-      "Name": "Coin_1",
-      "Position": "150,150,40",
+      "Name": "CashOutPad (testbed placeholder)",
+      "Position": "400,0,-40",
       "Rotation": "0,0,0,1",
-      "Scale": "0.6,0.6,0.6",
+      "Scale": "1.6,1.6,0.15",
+      "Tags": "solid",
       "Enabled": true,
       "Components": [
         {
           "__type": "Sandbox.ModelRenderer",
-          "__guid": "43696277-8a13-42b3-9903-966ee694ff90",
+          "__guid": "ae52be79-e107-4c25-98dd-507fe43dab4d",
           "BodyGroups": 18446744073709551615,
-          "Model": "models/dev/sphere.vmdl",
+          "Model": "models/dev/box.vmdl",
           "RenderType": "On",
-          "Tint": "1,0.84,0.2,1"
+          "Tint": "0.2,1,0.4,1"
         },
         {
-          "__type": "Sandbox.SphereCollider",
-          "__guid": "c2a17a0e-0e81-4fc0-bcbb-b67595608b8a",
-          "Center": "0,0,0",
+          "__type": "Sandbox.BoxCollider",
+          "__guid": "7f4feba8-fc2a-40e0-a9c1-3d2e64b6708a",
+          "Center": "0,0,30",
           "IsTrigger": true,
-          "Radius": 40.0,
+          "Scale": "50,50,80",
           "Static": false
         },
         {
-          "__type": "Runner.Economy.CoinPickup",
-          "__guid": "7c7e0a13-7697-467e-ac9d-77e48efddab1",
-          "Value": 1,
-          "RespawnSeconds": 3.0,
-          "SpinSpeed": 180.0
-        }
-      ]
-    },
-    {
-      "__guid": "3f42545f-71d3-4c88-977b-9b6507b59ddf",
-      "Flags": 0,
-      "Name": "Coin_2",
-      "Position": "-150,150,40",
-      "Rotation": "0,0,0,1",
-      "Scale": "0.6,0.6,0.6",
-      "Enabled": true,
-      "Components": [
-        {
-          "__type": "Sandbox.ModelRenderer",
-          "__guid": "220b5452-4846-47d5-8af5-2148167df5f3",
-          "BodyGroups": 18446744073709551615,
-          "Model": "models/dev/sphere.vmdl",
-          "RenderType": "On",
-          "Tint": "1,0.84,0.2,1"
-        },
-        {
-          "__type": "Sandbox.SphereCollider",
-          "__guid": "1f4f02fe-ba0a-47b5-9801-104f36c8b8b9",
-          "Center": "0,0,0",
-          "IsTrigger": true,
-          "Radius": 40.0,
-          "Static": false
-        },
-        {
-          "__type": "Runner.Economy.CoinPickup",
-          "__guid": "32ea5c02-866b-4d24-bd93-e7054851b6c9",
-          "Value": 1,
-          "RespawnSeconds": 3.0,
-          "SpinSpeed": 180.0
-        }
-      ]
-    },
-    {
-      "__guid": "f57ce3ad-e9ad-44ae-bdea-7cd7b30ef9cc",
-      "Flags": 0,
-      "Name": "Coin_3",
-      "Position": "0,-200,40",
-      "Rotation": "0,0,0,1",
-      "Scale": "0.6,0.6,0.6",
-      "Enabled": true,
-      "Components": [
-        {
-          "__type": "Sandbox.ModelRenderer",
-          "__guid": "37e0645b-18a0-43dc-912c-f6617a9a0a36",
-          "BodyGroups": 18446744073709551615,
-          "Model": "models/dev/sphere.vmdl",
-          "RenderType": "On",
-          "Tint": "1,0.84,0.2,1"
-        },
-        {
-          "__type": "Sandbox.SphereCollider",
-          "__guid": "bfe4957b-7f52-4f33-befb-177ac303c77d",
-          "Center": "0,0,0",
-          "IsTrigger": true,
-          "Radius": 40.0,
-          "Static": false
-        },
-        {
-          "__type": "Runner.Economy.CoinPickup",
-          "__guid": "62ff5b4d-1fa0-4014-ae8f-7a2b599ce449",
-          "Value": 5,
-          "RespawnSeconds": 3.0,
-          "SpinSpeed": 180.0
+          "__type": "Runner.World.CashOutPad",
+          "__guid": "cea54f6a-77a6-48f1-b582-2ad124cba426",
+          "CoinReward": 5,
+          "SpawnPosition": "0,0,64",
+          "CooldownSeconds": 1.0
         }
       ]
     },

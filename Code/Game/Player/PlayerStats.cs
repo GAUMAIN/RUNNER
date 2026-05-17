@@ -28,8 +28,8 @@ public sealed class PlayerStats : Component
 	[Sync] public long Xp { get; set; }
 	[Sync] public int Level { get; set; } = 1;
 
-	/// <summary>Coins collected in the current run. NOT persisted — cashed out at the end-of-level pad.</summary>
-	[Sync] public long HeldCoins { get; set; }
+	/// <summary>Persistent coin balance. Awarded only by reaching a cash-out pad.</summary>
+	[Sync] public long Coins { get; set; }
 
 	// ── Persistence ──────────────────────────────────────────────────────────
 	private static readonly IProfileRepository Repo = new LocalProfileRepository();
@@ -92,7 +92,8 @@ public sealed class PlayerStats : Component
 			{
 				Xp = profile.Xp;
 				Level = Math.Max( 1, profile.Level );
-				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP" );
+				Coins = profile.Currencies != null && profile.Currencies.TryGetValue( "coins", out var c ) ? c : 0L;
+				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP · {Coins} coins" );
 			}
 			else
 			{
@@ -120,6 +121,7 @@ public sealed class PlayerStats : Component
 				Level = Level,
 				LastSeenAt = DateTime.UtcNow,
 			};
+			profile.Currencies["coins"] = Coins;
 			await Repo.SaveAsync( profile );
 			_dirty = false;
 			_timeSinceSave = 0;
@@ -192,16 +194,18 @@ public sealed class PlayerStats : Component
 		return conn is null ? 0UL : conn.SteamId;
 	}
 
-	// ── Coins (in-run, not persisted) ────────────────────────────────────────
+	// ── Coins (persistent, banked only at cash-out pads) ─────────────────────
 
-	public void GrantHeldCoins( long amount )
+	public void GrantCoins( long amount )
 	{
 		if ( IsProxy )
 			return;
 		if ( amount <= 0 )
 			return;
 
-		HeldCoins += amount;
-		EventBus.Publish( new PlayerCurrencyChanged( SteamId(), "held_coins", amount, HeldCoins ) );
+		Coins += amount;
+		_dirty = true;
+		EventBus.Publish( new PlayerCurrencyChanged( SteamId(), "coins", amount, Coins ) );
+		Log.Info( $"[Runner] +{amount} coins (total: {Coins})" );
 	}
 }
