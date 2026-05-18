@@ -88,11 +88,26 @@
 		EventBus.Unsubscribe<PlayerRebirthed>( OnRebirthed );
 	}
 
+	// Fallback paths — used when the Inspector slot is empty. Override by assigning in HudPanel inspector.
+	private const string FallbackLevelUp = "sounds/kenney/ui/ui.favourite.sound";
+	private const string FallbackCashOut = "sounds/kenney/ui/ui.upvote.sound";
+	private const string FallbackRebirth = "sounds/kenney/ui/ui.popup.message.open.sound";
+	private const string FallbackShopBuy = "sounds/kenney/ui/ui.button.press.sound";
+
+	private static void PlaySafe( SoundEvent assigned, string fallback )
+	{
+		if ( assigned is not null )
+		{
+			Sound.Play( assigned );
+			return;
+		}
+		Sound.Play( fallback );
+	}
+
 	private void OnLevelUp( PlayerLeveledUp evt )
 	{
 		_timeSinceLevelUp = 0f;
-		if ( LevelUpSound is not null )
-			Sound.Play( LevelUpSound );
+		PlaySafe( LevelUpSound, FallbackLevelUp );
 	}
 
 	private void OnCurrencyChanged( PlayerCurrencyChanged evt )
@@ -100,16 +115,15 @@
 		if ( evt.Currency != "coins" )
 			return;
 
-		if ( evt.Delta > 0 && CashOutSound is not null )
-			Sound.Play( CashOutSound );
-		else if ( evt.Delta < 0 && ShopBuySound is not null )
-			Sound.Play( ShopBuySound );
+		if ( evt.Delta > 0 )
+			PlaySafe( CashOutSound, FallbackCashOut );
+		else if ( evt.Delta < 0 )
+			PlaySafe( ShopBuySound, FallbackShopBuy );
 	}
 
 	private void OnRebirthed( PlayerRebirthed evt )
 	{
-		if ( RebirthSound is not null )
-			Sound.Play( RebirthSound );
+		PlaySafe( RebirthSound, FallbackRebirth );
 	}
 
 	public float XpPercent => _xpNeeded <= 0 ? 0f : ((float)_xpInLevel / _xpNeeded) * 100f;
