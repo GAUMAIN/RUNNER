@@ -74,7 +74,7 @@
           "ShadowCascadeSplitRatio": 0.91,
           "ShadowHardness": 0,
           "Shadows": true,
-          "SkyColor": "0.05882,0.07451,0.08235,1",
+          "SkyColor": "0.35,0.52,0.72,1",
           "Visualizer": {}
         }
       ],
@@ -101,7 +101,7 @@
           "__guid": "88670d2a-f5b1-4b27-ab9c-142ae3e78363",
           "__enabled": true,
           "Flags": 0,
-          "BackgroundColor": "0.18,0.2,0.24,1",
+          "BackgroundColor": "0.55,0.72,0.88,1",
           "ClearFlags": "All",
           "EnablePostProcessing": true,
           "FieldOfView": 80,
@@ -1511,6 +1511,90 @@
           "SpawnPosition": "-400,0,64",
           "TriggerRadius": 80
         }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "49f51725-9881-4be6-98fc-6814d13c1410",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "L1_Wall_Left",
+      "Position": "1450,-200,50",
+      "Rotation": "0,0,0,1",
+      "Scale": "60,1,4",
+      "Tags": "solid",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        { "__type": "Sandbox.ModelRenderer", "__guid": "ab638131-a5e4-4279-ba0d-e14842479f11", "__enabled": true, "Flags": 0, "BodyGroups": 18446744073709551615, "CreateAttachments": false, "Model": "models/dev/box.vmdl", "RenderOptions": { "GameLayer": true, "OverlayLayer": false, "BloomLayer": false, "AfterUILayer": false }, "RenderType": "On", "Tint": "0.45,0.4,0.32,1" },
+        { "__type": "Sandbox.BoxCollider", "__guid": "2bc50178-5d97-4daa-9479-0d8f07c13350", "__enabled": true, "Flags": 0, "Center": "0,0,0", "IsTrigger": false, "Scale": "50,50,50", "Static": true, "Surface": null, "SurfaceVelocity": "0,0,0" }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "3393a596-0f7a-4c6d-bf42-6358ed7f0091",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "L1_Wall_Right",
+      "Position": "1450,200,50",
+      "Rotation": "0,0,0,1",
+      "Scale": "60,1,4",
+      "Tags": "solid",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        { "__type": "Sandbox.ModelRenderer", "__guid": "6f61f7ab-7a8d-4d69-9039-73609d3bcf8d", "__enabled": true, "Flags": 0, "BodyGroups": 18446744073709551615, "CreateAttachments": false, "Model": "models/dev/box.vmdl", "RenderOptions": { "GameLayer": true, "OverlayLayer": false, "BloomLayer": false, "AfterUILayer": false }, "RenderType": "On", "Tint": "0.45,0.4,0.32,1" },
+        { "__type": "Sandbox.BoxCollider", "__guid": "5996b39b-bc75-4c60-9e52-dc4bd8dd5607", "__enabled": true, "Flags": 0, "Center": "0,0,0", "IsTrigger": false, "Scale": "50,50,50", "Static": true, "Surface": null, "SurfaceVelocity": "0,0,0" }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "9c476bb8-7c13-4654-9c71-744139cfdb9f",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "L2_Wall_Left",
+      "Position": "6400,-450,50",
+      "Rotation": "0,0,0,1",
+      "Scale": "122,1,4",
+      "Tags": "solid",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        { "__type": "Sandbox.ModelRenderer", "__guid": "f1eb8ca0-36ec-455e-951f-95432760f83d", "__enabled": true, "Flags": 0, "BodyGroups": 18446744073709551615, "CreateAttachments": false, "Model": "models/dev/box.vmdl", "RenderOptions": { "GameLayer": true, "OverlayLayer": false, "BloomLayer": false, "AfterUILayer": false }, "RenderType": "On", "Tint": "0.5,0.42,0.32,1" },
+        { "__type": "Sandbox.BoxCollider", "__guid": "24463f4f-d086-4cf5-b695-b036e2b2ec67", "__enabled": true, "Flags": 0, "Center": "0,0,0", "IsTrigger": false, "Scale": "50,50,50", "Static": true, "Surface": null, "SurfaceVelocity": "0,0,0" }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "dd06e9b2-9a2a-4c0d-aa30-58582d4b63b5",
+      "__version": 2,
+      "Flags": 0,
+      "Name": "L2_Wall_Right",
+      "Position": "6400,450,50",
+      "Rotation": "0,0,0,1",
+      "Scale": "122,1,4",
+      "Tags": "solid",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "NetworkFlags": 0,
+      "NetworkOrphaned": 0,
+      "NetworkTransmit": true,
+      "OwnerTransfer": 1,
+      "Components": [
+        { "__type": "Sandbox.ModelRenderer", "__guid": "88198989-62b0-4efa-a5c1-76609c1ad88a", "__enabled": true, "Flags": 0, "BodyGroups": 18446744073709551615, "CreateAttachments": false, "Model": "models/dev/box.vmdl", "RenderOptions": { "GameLayer": true, "OverlayLayer": false, "BloomLayer": false, "AfterUILayer": false }, "RenderType": "On", "Tint": "0.5,0.42,0.32,1" },
+        { "__type": "Sandbox.BoxCollider", "__guid": "ee37eb15-8b68-4cb5-a56c-a726de85dc8d", "__enabled": true, "Flags": 0, "Center": "0,0,0", "IsTrigger": false, "Scale": "50,50,50", "Static": true, "Surface": null, "SurfaceVelocity": "0,0,0" }
       ],
       "Children": []
     },
