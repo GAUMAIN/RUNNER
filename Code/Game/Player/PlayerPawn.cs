@@ -29,10 +29,16 @@ public sealed class PlayerPawn : Component
 	/// <summary>Jump impulse magnitude.</summary>
 	[Property] public float JumpStrength { get; set; } = 322f;
 
+	/// <summary>Falling below this world Z respawns the player instantly.</summary>
+	[Property] public float DeathZ { get; set; } = -200f;
+
 	public Vector3 WishVelocity { get; private set; }
 
 	[Sync] public Angles EyeAngles { get; set; }
 	[Sync] public bool IsSprinting { get; set; }
+
+	private Vector3 _spawnPosition;
+	private bool _spawnCaptured;
 
 	protected override void OnEnabled()
 	{
@@ -48,6 +54,25 @@ public sealed class PlayerPawn : Component
 			ee.roll = 0;
 			EyeAngles = ee;
 		}
+	}
+
+	protected override void OnStart()
+	{
+		base.OnStart();
+		_spawnPosition = WorldPosition;
+		_spawnCaptured = true;
+	}
+
+	/// <summary>Instant TP back to the captured spawn point. Called on death-by-fall and by cash-out pads.</summary>
+	public void Respawn()
+	{
+		if ( !_spawnCaptured )
+			return;
+
+		WorldPosition = _spawnPosition;
+		var cc = GameObject.Components.Get<CharacterController>();
+		if ( cc.IsValid() )
+			cc.Velocity = Vector3.Zero;
 	}
 
 	protected override void OnUpdate()
@@ -66,6 +91,13 @@ public sealed class PlayerPawn : Component
 	{
 		if ( IsProxy )
 			return;
+
+		// Fell into the void — respawn instantly, skip movement this tick.
+		if ( _spawnCaptured && WorldPosition.z < DeathZ )
+		{
+			Respawn();
+			return;
+		}
 
 		var cc = GameObject.Components.Get<CharacterController>();
 		if ( !cc.IsValid() )
