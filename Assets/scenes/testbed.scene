@@ -878,7 +878,7 @@
           "OnComponentFixedUpdate": null,
           "OnComponentStart": null,
           "OnComponentUpdate": null,
-          "SpawnPosition": "0,0,64",
+          "SpawnPosition": "-400,0,64",
           "TriggerRadius": 80
         }
       ],
