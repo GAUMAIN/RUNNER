@@ -24,7 +24,7 @@
           "Flags": 0,
           "Author": null,
           "Changes": null,
-          "Description": "RUNNER testbed Ã¢â‚¬â€ spawn, walk, jump.",
+          "Description": "RUNNER testbed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â spawn, walk, jump.",
           "Group": null,
           "OnComponentDestroy": null,
           "OnComponentDisabled": null,
@@ -198,7 +198,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/stone/tile/stone_brick_tile_01.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -214,7 +214,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "0.75,0.85,1,1"
+          "Tint": "1,1,1,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -512,7 +512,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/floor/floor_tile_02.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -528,7 +528,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,1,1,1"
+          "Tint": "0.85,1,0.78,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -584,7 +584,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/floor/floor_tile_02.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -600,7 +600,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,1,1,1"
+          "Tint": "0.85,1,0.78,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -656,7 +656,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/floor/floor_tile_02.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -672,7 +672,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,1,1,1"
+          "Tint": "0.85,1,0.78,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -728,7 +728,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/floor/floor_tile_02.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -744,7 +744,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,1,1,1"
+          "Tint": "0.85,1,0.78,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -800,7 +800,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/floor/floor_tile_02.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -816,7 +816,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,1,1,1"
+          "Tint": "0.85,1,0.78,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1118,7 +1118,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/damage/concrete_damaged.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1134,7 +1134,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,0.85,0.7,1"
+          "Tint": "1,0.88,0.72,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1190,7 +1190,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/damage/concrete_damaged.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1206,7 +1206,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,0.85,0.7,1"
+          "Tint": "1,0.88,0.72,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1262,7 +1262,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/damage/concrete_damaged.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1278,7 +1278,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,0.85,0.7,1"
+          "Tint": "1,0.88,0.72,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1334,7 +1334,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/damage/concrete_damaged.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1350,7 +1350,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,0.85,0.7,1"
+          "Tint": "1,0.88,0.72,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1406,7 +1406,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/damage/concrete_damaged.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1422,7 +1422,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,0.85,0.7,1"
+          "Tint": "1,0.88,0.72,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1567,7 +1567,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": null,
+          "MaterialOverride": "materials/stone/brick/wall_stone_brick_a1.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1583,7 +1583,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "0.45,0.4,0.32,1"
+          "Tint": "1,0.95,0.9,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1639,7 +1639,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": null,
+          "MaterialOverride": "materials/stone/brick/wall_stone_brick_a1.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1655,7 +1655,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "0.45,0.4,0.32,1"
+          "Tint": "1,0.95,0.9,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1711,7 +1711,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": null,
+          "MaterialOverride": "materials/stone/brick/wall_stone_brick_a1.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1727,7 +1727,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "0.5,0.42,0.32,1"
+          "Tint": "1,0.92,0.85,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1783,7 +1783,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": null,
+          "MaterialOverride": "materials/stone/brick/wall_stone_brick_a1.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1799,7 +1799,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "0.5,0.42,0.32,1"
+          "Tint": "1,0.92,0.85,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -1947,7 +1947,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/damage/concrete_damaged.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -1963,7 +1963,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,0.85,0.7,1"
+          "Tint": "1,0.88,0.72,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -2019,7 +2019,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/damage/concrete_damaged.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -2035,7 +2035,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,0.85,0.7,1"
+          "Tint": "1,0.88,0.72,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -2091,7 +2091,7 @@
           "CreateAttachments": false,
           "LodOverride": null,
           "MaterialGroup": null,
-          "MaterialOverride": "dev/helper/testgrid.vmat",
+          "MaterialOverride": "materials/concrete/damage/concrete_damaged.vmat",
           "Materials": null,
           "Model": "models/dev/box.vmdl",
           "OnComponentDestroy": null,
@@ -2107,7 +2107,7 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
-          "Tint": "1,0.85,0.7,1"
+          "Tint": "1,0.88,0.72,1"
         },
         {
           "__type": "Sandbox.BoxCollider",
@@ -2277,7 +2277,7 @@
     "WantsSystemScene": true,
     "Metadata": {
       "Title": "Testbed",
-      "Description": "RUNNER testbed Ã¢â‚¬â€ spawn, walk, jump."
+      "Description": "RUNNER testbed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â spawn, walk, jump."
     },
     "NavMesh": {
       "Enabled": false,
@@ -2311,7 +2311,7 @@
   },
   "ResourceVersion": 3,
   "Title": "Testbed",
-  "Description": "RUNNER testbed Ã¢â‚¬â€ spawn, walk, jump.",
+  "Description": "RUNNER testbed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â spawn, walk, jump.",
   "__references": [],
   "__version": 3
 }
