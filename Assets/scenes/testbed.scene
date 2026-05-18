@@ -62,7 +62,7 @@
           "Flags": 0,
           "FogMode": "Enabled",
           "FogStrength": 1,
-          "LightColor": "0.91373,0.98039,1,1",
+          "LightColor": "1,0.78,0.6,1",
           "OnComponentDestroy": null,
           "OnComponentDisabled": null,
           "OnComponentEnabled": null,
@@ -74,7 +74,7 @@
           "ShadowCascadeSplitRatio": 0.91,
           "ShadowHardness": 0,
           "Shadows": true,
-          "SkyColor": "0.35,0.52,0.72,1",
+          "SkyColor": "0.65,0.42,0.5,1",
           "Visualizer": {}
         }
       ],
@@ -101,7 +101,7 @@
           "__guid": "88670d2a-f5b1-4b27-ab9c-142ae3e78363",
           "__enabled": true,
           "Flags": 0,
-          "BackgroundColor": "0.55,0.72,0.88,1",
+          "BackgroundColor": "0.95,0.58,0.5,1",
           "ClearFlags": "All",
           "EnablePostProcessing": true,
           "FieldOfView": 80,
