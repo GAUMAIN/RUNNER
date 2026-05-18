@@ -1,0 +1,84 @@
+$gold: #ffd64a;
+$gold-glow: rgba(255, 214, 74, 0.55);
+$panel-bg: rgba(14, 12, 6, 0.88);
+$panel-stroke: rgba(255, 255, 255, 0.1);
+$text-main: #fff8e0;
+$text-dim: rgba(255, 248, 224, 0.55);
+
+LeaderboardPanel
+{
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	pointer-events: none;
+	font-family: Poppins;
+	color: $text-main;
+	justify-content: center;
+	align-items: center;
+
+	.board
+	{
+		flex-direction: column;
+		width: 520px;
+		padding: 26px 30px;
+		background-color: $panel-bg;
+		border: 1px solid $panel-stroke;
+		border-radius: 14px;
+		backdrop-filter: blur( 22px );
+		box-shadow: 0 0 50px rgba(255, 214, 74, 0.22);
+
+		.title
+		{
+			font-size: 22px;
+			font-weight: 800;
+			letter-spacing: 8px;
+			color: $gold;
+			text-shadow: 0 0 14px $gold-glow;
+			text-align: center;
+			padding-bottom: 16px;
+			margin-bottom: 14px;
+			border-bottom: 1px solid $panel-stroke;
+		}
+
+		.row
+		{
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			padding: 10px 6px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+
+			.label
+			{
+				font-size: 11px;
+				letter-spacing: 2px;
+				color: $text-dim;
+			}
+
+			.value
+			{
+				font-size: 22px;
+				font-weight: 700;
+				color: $text-main;
+
+				&.gold
+				{
+					color: $gold;
+					text-shadow: 0 0 10px $gold-glow;
+				}
+			}
+		}
+
+		.hint
+		{
+			margin-top: 16px;
+			font-size: 10px;
+			letter-spacing: 1px;
+			color: $text-dim;
+			text-align: center;
+			font-style: italic;
+		}
+	}
+}

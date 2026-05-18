@@ -45,8 +45,11 @@ public sealed class PlayerProfile
 	public int Upgrade_Xp { get; set; }
 	public int Upgrade_Coin { get; set; }
 
-	// ── Lifetime stats ─────────────────────────────────────────────────────────
+	// ── Lifetime stats (only ever grow; never reset on rebirth) ───────────────
 	public long LifetimeDistanceTraveled { get; set; }
+	public long TotalCoinsLifetime { get; set; }
+	public int HighestLevel { get; set; } = 1;
+	public int CashOutsCompleted { get; set; }
 	public int RacesWon { get; set; }
 	public int RacesEntered { get; set; }
 }

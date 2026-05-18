@@ -1,0 +1,94 @@
+@using System
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Runner.Player
+@using Runner.World
+@inherits PanelComponent
+
+<root>
+	@if ( _visible && _stats.IsValid() )
+	{
+		<div class="board">
+			<div class="title">RECORDS</div>
+
+			<div class="row">
+				<div class="label">HIGHEST LEVEL</div>
+				<div class="value">@_stats.HighestLevel</div>
+			</div>
+
+			<div class="row">
+				<div class="label">REBIRTHS</div>
+				<div class="value">@_stats.Rebirths</div>
+			</div>
+
+			<div class="row">
+				<div class="label">TOTAL COINS (lifetime)</div>
+				<div class="value gold">@FormatNumber( _stats.TotalCoinsLifetime )</div>
+			</div>
+
+			<div class="row">
+				<div class="label">CASH-OUTS COMPLETED</div>
+				<div class="value">@_stats.CashOutsCompleted</div>
+			</div>
+
+			<div class="row">
+				<div class="label">DISTANCE RUN</div>
+				<div class="value">@FormatDistance( _stats.LifetimeDistance )</div>
+			</div>
+
+			<div class="hint">Local stats only · global leaderboard coming with cloud backend</div>
+		</div>
+	}
+</root>
+
+@code
+{
+	private bool _visible;
+	private bool _wasVisible;
+	private PlayerStats _stats;
+
+	protected override void OnUpdate()
+	{
+		var pad = Scene.GetAllComponents<LeaderboardPad>().FirstOrDefault();
+		if ( pad.IsValid() )
+		{
+			_visible = pad.IsPlayerNear;
+			_stats = pad.NearbyStats;
+		}
+		else
+		{
+			_visible = false;
+			_stats = null;
+		}
+
+		if ( _visible != _wasVisible )
+		{
+			Mouse.Visible = _visible;
+			_wasVisible = _visible;
+		}
+	}
+
+	private static string FormatNumber( long n )
+	{
+		if ( n >= 1_000_000_000 ) return (n / 1_000_000_000.0).ToString( "0.00", System.Globalization.CultureInfo.InvariantCulture ) + "B";
+		if ( n >= 1_000_000 )     return (n / 1_000_000.0).ToString( "0.00", System.Globalization.CultureInfo.InvariantCulture ) + "M";
+		if ( n >= 10_000 )        return (n / 1_000.0).ToString( "0.0", System.Globalization.CultureInfo.InvariantCulture ) + "K";
+		return n.ToString( System.Globalization.CultureInfo.InvariantCulture );
+	}
+
+	private static string FormatDistance( long units )
+	{
+		// 1 source unit ~ 1 inch. Convert to a friendlier display.
+		if ( units >= 1_000_000 ) return (units / 1_000_000.0).ToString( "0.00", System.Globalization.CultureInfo.InvariantCulture ) + " M units";
+		if ( units >= 10_000 )    return (units / 1_000.0).ToString( "0.0", System.Globalization.CultureInfo.InvariantCulture ) + " K units";
+		return units + " units";
+	}
+
+	protected override int BuildHash()
+	{
+		if ( !_stats.IsValid() )
+			return HashCode.Combine( _visible, 0 );
+		return HashCode.Combine( _visible, _stats.HighestLevel, _stats.Rebirths, _stats.TotalCoinsLifetime, _stats.CashOutsCompleted, _stats.LifetimeDistance );
+	}
+}

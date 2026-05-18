@@ -40,6 +40,12 @@ public sealed class PlayerStats : Component
 	/// <summary>Number of rebirths completed. Persistent. Each one grants a flat bonus to all gains.</summary>
 	[Sync] public int Rebirths { get; set; }
 
+	// ── Lifetime / leaderboard stats (never reset on rebirth) ────────────────
+	[Sync] public int HighestLevel { get; set; } = 1;
+	[Sync] public long TotalCoinsLifetime { get; set; }
+	[Sync] public int CashOutsCompleted { get; set; }
+	[Sync] public long LifetimeDistance { get; set; }
+
 	// ── Persistence ──────────────────────────────────────────────────────────
 	private static readonly IProfileRepository Repo = new LocalProfileRepository();
 
@@ -124,7 +130,11 @@ public sealed class PlayerStats : Component
 				Upgrade_Xp = profile.Upgrade_Xp;
 				Upgrade_Coin = profile.Upgrade_Coin;
 				Rebirths = profile.Rebirths;
-				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP · {Coins} coins · upg S{Upgrade_Speed}/X{Upgrade_Xp}/C{Upgrade_Coin} · {Rebirths} rebirths" );
+				HighestLevel = Math.Max( 1, profile.HighestLevel );
+				TotalCoinsLifetime = profile.TotalCoinsLifetime;
+				CashOutsCompleted = profile.CashOutsCompleted;
+				LifetimeDistance = profile.LifetimeDistanceTraveled;
+				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP · {Coins} coins · upg S{Upgrade_Speed}/X{Upgrade_Xp}/C{Upgrade_Coin} · {Rebirths} rebirths · records: HighLvl {HighestLevel}, TotalCoins {TotalCoinsLifetime}, {CashOutsCompleted} cashouts, {LifetimeDistance}u" );
 			}
 			else
 			{
@@ -154,6 +164,10 @@ public sealed class PlayerStats : Component
 				Upgrade_Xp = Upgrade_Xp,
 				Upgrade_Coin = Upgrade_Coin,
 				Rebirths = Rebirths,
+				HighestLevel = HighestLevel,
+				TotalCoinsLifetime = TotalCoinsLifetime,
+				CashOutsCompleted = CashOutsCompleted,
+				LifetimeDistanceTraveled = LifetimeDistance,
 				LastSeenAt = DateTime.UtcNow,
 			};
 			profile.Currencies["coins"] = Coins;
@@ -190,6 +204,9 @@ public sealed class PlayerStats : Component
 			return;
 
 		_runUnitsAccumulator += units;
+		LifetimeDistance += (long)units;
+		_dirty = true;
+
 		if ( _runUnitsAccumulator < UnitsPerXp )
 			return;
 
@@ -218,6 +235,9 @@ public sealed class PlayerStats : Component
 		var (newLevel, _, _) = XpCurve.ComputeLevel( Xp, BaseXpPerLevel, XpGrowth );
 		Level = newLevel;
 
+		if ( Level > HighestLevel )
+			HighestLevel = Level;
+
 		EventBus.Publish( new PlayerXpGranted( SteamId(), boosted, reason ) );
 		_dirty = true;
 
@@ -244,9 +264,11 @@ public sealed class PlayerStats : Component
 			return;
 
 		Coins += amount;
+		TotalCoinsLifetime += amount;
+		CashOutsCompleted += 1;
 		_dirty = true;
 		EventBus.Publish( new PlayerCurrencyChanged( SteamId(), "coins", amount, Coins ) );
-		Log.Info( $"[Runner] +{amount} coins (total: {Coins})" );
+		Log.Info( $"[Runner] +{amount} coins (total: {Coins} · lifetime {TotalCoinsLifetime} · {CashOutsCompleted} cashouts)" );
 
 		// Coins are a rare, high-value event — skip the throttle and persist now.
 		if ( _profileLoaded )
@@ -271,10 +293,14 @@ public sealed class PlayerStats : Component
 		Upgrade_Xp = 0;
 		Upgrade_Coin = 0;
 		Rebirths = 0;
+		HighestLevel = 1;
+		TotalCoinsLifetime = 0;
+		CashOutsCompleted = 0;
+		LifetimeDistance = 0;
 		_runUnitsAccumulator = 0f;
 		_dirty = true;
 
-		Log.Info( "[Runner] Progress reset → Lvl 1 · 0 XP · 0 coins · upgrades cleared · 0 rebirths" );
+		Log.Info( "[Runner] Progress reset (full wipe incl. lifetime records)" );
 
 		if ( _profileLoaded )
 			_ = SaveProfileAsync();
