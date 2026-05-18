@@ -37,6 +37,9 @@ public sealed class PlayerStats : Component
 	[Sync] public int Upgrade_Xp { get; set; }
 	[Sync] public int Upgrade_Coin { get; set; }
 
+	/// <summary>Number of rebirths completed. Persistent. Each one grants a flat bonus to all gains.</summary>
+	[Sync] public int Rebirths { get; set; }
+
 	// ── Persistence ──────────────────────────────────────────────────────────
 	private static readonly IProfileRepository Repo = new LocalProfileRepository();
 
@@ -49,12 +52,15 @@ public sealed class PlayerStats : Component
 	public float SpeedMultiplier
 		=> SpeedCurve.MultiplierAtLevel( Level, BaseSpeedMultiplier, SpeedGainPerLevel );
 
-	/// <summary>Level-based speed × shop's permanent speed bonus.</summary>
-	public float TotalSpeedMultiplier
-		=> SpeedMultiplier * (1f + Upgrade_Speed * 0.05f);
+	/// <summary>Permanent global bonus from every rebirth (1.0 at 0 rebirths, +50% per).</summary>
+	public float RebirthBonus => 1f + Rebirths * GameConfig.RebirthBonusPerCount;
 
-	public float XpGainMultiplier => 1f + Upgrade_Xp * 0.10f;
-	public float CoinGainMultiplier => 1f + Upgrade_Coin * 0.10f;
+	/// <summary>Level-based speed × shop speed × rebirth bonus.</summary>
+	public float TotalSpeedMultiplier
+		=> SpeedMultiplier * (1f + Upgrade_Speed * 0.05f) * RebirthBonus;
+
+	public float XpGainMultiplier => (1f + Upgrade_Xp * 0.10f) * RebirthBonus;
+	public float CoinGainMultiplier => (1f + Upgrade_Coin * 0.10f) * RebirthBonus;
 
 	public int GetUpgradeLevel( UpgradeType type ) => type switch
 	{
@@ -117,7 +123,8 @@ public sealed class PlayerStats : Component
 				Upgrade_Speed = profile.Upgrade_Speed;
 				Upgrade_Xp = profile.Upgrade_Xp;
 				Upgrade_Coin = profile.Upgrade_Coin;
-				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP · {Coins} coins · upg S{Upgrade_Speed}/X{Upgrade_Xp}/C{Upgrade_Coin}" );
+				Rebirths = profile.Rebirths;
+				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP · {Coins} coins · upg S{Upgrade_Speed}/X{Upgrade_Xp}/C{Upgrade_Coin} · {Rebirths} rebirths" );
 			}
 			else
 			{
@@ -146,6 +153,7 @@ public sealed class PlayerStats : Component
 				Upgrade_Speed = Upgrade_Speed,
 				Upgrade_Xp = Upgrade_Xp,
 				Upgrade_Coin = Upgrade_Coin,
+				Rebirths = Rebirths,
 				LastSeenAt = DateTime.UtcNow,
 			};
 			profile.Currencies["coins"] = Coins;
@@ -262,10 +270,11 @@ public sealed class PlayerStats : Component
 		Upgrade_Speed = 0;
 		Upgrade_Xp = 0;
 		Upgrade_Coin = 0;
+		Rebirths = 0;
 		_runUnitsAccumulator = 0f;
 		_dirty = true;
 
-		Log.Info( "[Runner] Progress reset → Lvl 1 · 0 XP · 0 coins · upgrades cleared" );
+		Log.Info( "[Runner] Progress reset → Lvl 1 · 0 XP · 0 coins · upgrades cleared · 0 rebirths" );
 
 		if ( _profileLoaded )
 			_ = SaveProfileAsync();
@@ -298,6 +307,40 @@ public sealed class PlayerStats : Component
 
 		_dirty = true;
 		Log.Info( $"[Shop] Bought {type} → lvl {currentLevel + 1} · -{cost} coins (now {Coins})" );
+
+		if ( _profileLoaded )
+			_ = SaveProfileAsync();
+
+		return true;
+	}
+
+	// ── Rebirth ──────────────────────────────────────────────────────────────
+
+	public bool CanRebirth => Level >= GameConfig.MinLevelForRebirth;
+
+	/// <summary>
+	/// Wipe XP/Level/Coins/Upgrades and grant +1 Rebirth. Permanent rebirth bonus
+	/// stacks on top of everything else. Server-side; persisted immediately.
+	/// </summary>
+	public bool TryRebirth()
+	{
+		if ( IsProxy )
+			return false;
+		if ( !CanRebirth )
+			return false;
+
+		Rebirths += 1;
+		Xp = 0;
+		Level = 1;
+		Coins = 0;
+		Upgrade_Speed = 0;
+		Upgrade_Xp = 0;
+		Upgrade_Coin = 0;
+		_runUnitsAccumulator = 0f;
+		_dirty = true;
+
+		Log.Info( $"[Rebirth] ✦ Rebirth #{Rebirths} — permanent bonus now ×{RebirthBonus:0.00} to all gains." );
+		EventBus.Publish( new PlayerRebirthed( SteamId(), Rebirths ) );
 
 		if ( _profileLoaded )
 			_ = SaveProfileAsync();

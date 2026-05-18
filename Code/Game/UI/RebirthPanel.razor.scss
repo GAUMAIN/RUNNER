@@ -1,0 +1,147 @@
+$accent: #c47bff;
+$accent-glow: rgba(196, 123, 255, 0.6);
+$panel-bg: rgba(14, 8, 24, 0.88);
+$panel-stroke: rgba(255, 255, 255, 0.1);
+$text-main: #f3e8ff;
+$text-dim: rgba(243, 232, 255, 0.55);
+$ok: #6dffaa;
+$ko: #ff7c7c;
+
+RebirthPanel
+{
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	pointer-events: none;
+	font-family: Poppins;
+	color: $text-main;
+	justify-content: center;
+	align-items: center;
+
+	.rebirth
+	{
+		flex-direction: column;
+		width: 520px;
+		padding: 26px 30px;
+		background-color: $panel-bg;
+		border: 1px solid $panel-stroke;
+		border-radius: 14px;
+		backdrop-filter: blur( 22px );
+		box-shadow: 0 0 50px rgba(196, 123, 255, 0.3);
+		align-items: center;
+		gap: 14px;
+
+		.title
+		{
+			font-size: 22px;
+			font-weight: 800;
+			letter-spacing: 6px;
+			color: $accent;
+			text-shadow: 0 0 14px $accent-glow;
+		}
+
+		.counters
+		{
+			flex-direction: row;
+			gap: 12px;
+			width: 100%;
+
+			.counter
+			{
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 14px 10px;
+				flex-grow: 1;
+				background-color: rgba(255, 255, 255, 0.03);
+				border: 1px solid rgba(255, 255, 255, 0.05);
+				border-radius: 8px;
+
+				.label
+				{
+					font-size: 10px;
+					letter-spacing: 2px;
+					color: $text-dim;
+					margin-bottom: 4px;
+				}
+
+				.value
+				{
+					font-size: 26px;
+					font-weight: 700;
+
+					&.ok { color: $ok; }
+					&.ko { color: $ko; }
+				}
+			}
+
+			.counter.big
+			{
+				flex-grow: 2;
+				.value
+				{
+					color: $accent;
+					text-shadow: 0 0 10px $accent-glow;
+					font-size: 34px;
+				}
+			}
+		}
+
+		.requirement
+		{
+			font-size: 12px;
+			letter-spacing: 2px;
+			color: $text-dim;
+		}
+
+		.warning
+		{
+			font-size: 11px;
+			color: rgba(255, 200, 200, 0.7);
+			text-align: center;
+			padding: 8px 4px;
+			line-height: 1.4;
+		}
+
+		.confirm
+		{
+			width: 100%;
+			padding: 14px;
+			text-align: center;
+			font-size: 18px;
+			font-weight: 700;
+			letter-spacing: 4px;
+			border-radius: 10px;
+			pointer-events: all;
+			transition: transform 0.05s, background-color 0.1s;
+
+			&.enabled
+			{
+				color: white;
+				background-color: rgba(196, 123, 255, 0.18);
+				border: 1px solid rgba(196, 123, 255, 0.55);
+				cursor: pointer;
+
+				&:hover { background-color: rgba(196, 123, 255, 0.35); box-shadow: 0 0 24px $accent-glow; }
+				&:active { transform: scale(0.97); }
+			}
+
+			&.disabled
+			{
+				color: rgba(255, 124, 124, 0.6);
+				background-color: rgba(80, 12, 12, 0.4);
+				border: 1px solid rgba(255, 124, 124, 0.25);
+				cursor: not-allowed;
+			}
+		}
+
+		.hint
+		{
+			font-size: 10px;
+			letter-spacing: 1px;
+			color: $text-dim;
+		}
+	}
+}

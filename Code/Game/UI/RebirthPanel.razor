@@ -1,0 +1,94 @@
+@using System
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Runner.Config
+@using Runner.Player
+@using Runner.World
+@inherits PanelComponent
+
+<root>
+	@if ( _visible && _stats.IsValid() )
+	{
+		<div class="rebirth">
+			<div class="title">REBIRTH</div>
+
+			<div class="counters">
+				<div class="counter">
+					<div class="label">CURRENT</div>
+					<div class="value">@_stats.Rebirths</div>
+				</div>
+				<div class="counter big">
+					<div class="label">BONUS</div>
+					<div class="value">×@_stats.RebirthBonus.ToString( "0.00", System.Globalization.CultureInfo.InvariantCulture )</div>
+				</div>
+				<div class="counter">
+					<div class="label">YOUR LVL</div>
+					<div class="value @(_stats.CanRebirth ? "ok" : "ko")">@_stats.Level</div>
+				</div>
+			</div>
+
+			<div class="requirement">
+				Required: Lvl @GameConfig.MinLevelForRebirth
+			</div>
+
+			<div class="warning">
+				Resets XP, Level, Coins, Upgrades — grants +50% perma to all gains.
+			</div>
+
+			@if ( _stats.CanRebirth )
+			{
+				<div class="confirm enabled" @onclick=@OnRebirthClick>✦ REBIRTH NOW ✦</div>
+				<div class="hint">Press E or click</div>
+			}
+			else
+			{
+				<div class="confirm disabled">REACH LVL @GameConfig.MinLevelForRebirth FIRST</div>
+				<div class="hint">Keep grinding</div>
+			}
+		</div>
+	}
+</root>
+
+@code
+{
+	private bool _visible;
+	private bool _wasVisible;
+	private PlayerStats _stats;
+
+	protected override void OnUpdate()
+	{
+		var pad = Scene.GetAllComponents<RebirthPad>().FirstOrDefault();
+		if ( pad.IsValid() )
+		{
+			_visible = pad.IsPlayerNear;
+			_stats = pad.NearbyStats;
+		}
+		else
+		{
+			_visible = false;
+			_stats = null;
+		}
+
+		if ( _visible != _wasVisible )
+		{
+			Mouse.Visible = _visible;
+			_wasVisible = _visible;
+		}
+	}
+
+	private void OnRebirthClick()
+	{
+		if ( !_stats.IsValid() )
+			return;
+		_stats.TryRebirth();
+	}
+
+	protected override int BuildHash()
+	{
+		int reb = _stats.IsValid() ? _stats.Rebirths : 0;
+		int lvl = _stats.IsValid() ? _stats.Level : 0;
+		bool can = _stats.IsValid() && _stats.CanRebirth;
+		return HashCode.Combine( _visible, reb, lvl, can );
+	}
+}

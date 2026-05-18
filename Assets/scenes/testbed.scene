@@ -285,6 +285,13 @@
           "Static": true,
           "Surface": null,
           "SurfaceVelocity": "0,0,0"
+        },
+        {
+          "__type": "Runner.World.RebirthPad",
+          "__guid": "14775593-e5f7-419c-b7ba-1baa372957a4",
+          "__enabled": true,
+          "Flags": 0,
+          "TriggerRadius": 120
         }
       ],
       "Children": []
@@ -978,6 +985,31 @@
             {
               "__type": "ShopPanel",
               "__guid": "5b3a7e22-5a6b-4d05-9876-a37e21bcd5e1",
+              "__enabled": true,
+              "Flags": 0
+            }
+          ],
+          "Children": []
+        },
+        {
+          "__guid": "91a2ec40-05c1-4852-9d03-5e5d93e7f612",
+          "__version": 2,
+          "Flags": 0,
+          "Name": "Rebirth",
+          "Position": "0,0,0",
+          "Rotation": "0,0,0,1",
+          "Scale": "1,1,1",
+          "Tags": "",
+          "Enabled": true,
+          "NetworkMode": 2,
+          "NetworkFlags": 0,
+          "NetworkOrphaned": 0,
+          "NetworkTransmit": true,
+          "OwnerTransfer": 1,
+          "Components": [
+            {
+              "__type": "RebirthPanel",
+              "__guid": "8d11f4f0-7315-421d-84bd-2e40992479ff",
               "__enabled": true,
               "Flags": 0
             }
