@@ -77,38 +77,6 @@ HudPanel
 		100% { transform: scale(1);     box-shadow: 0 0 0   rgba(0, 229, 255, 0); }
 	}
 
-	// ───────────────────────────────────────────────────────────────────────
-	// Dev-only reset button (bottom-right) — wipes Xp/Level/Coins
-	// ───────────────────────────────────────────────────────────────────────
-	.dev-reset
-	{
-		position: absolute;
-		bottom: 16px;
-		right: 16px;
-		padding: 8px 14px;
-		font-size: 11px;
-		letter-spacing: 2px;
-		color: rgba(255, 120, 120, 0.85);
-		background-color: rgba(40, 8, 8, 0.55);
-		border: 1px solid rgba(255, 80, 80, 0.35);
-		border-radius: 6px;
-		backdrop-filter: blur( 8px );
-		pointer-events: all;
-		cursor: pointer;
-		transition: background-color 0.1s, color 0.1s;
-
-		&:hover
-		{
-			background-color: rgba(80, 12, 12, 0.85);
-			color: white;
-			border-color: rgba(255, 120, 120, 0.7);
-		}
-
-		&:active
-		{
-			transform: scale(0.96);
-		}
-	}
 
 	// ───────────────────────────────────────────────────────────────────────
 	// Top-left: Level card + XP bar + multiplier

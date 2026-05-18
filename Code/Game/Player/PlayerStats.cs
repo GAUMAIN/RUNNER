@@ -216,7 +216,9 @@ public sealed class PlayerStats : Component
 	/// <summary>
 	/// Dev / testing: wipe progression so you can re-test the level at base speed.
 	/// Resets Xp, Level, Coins, and the XP accumulator. Persists immediately.
+	/// Exposed as a button in the Inspector when the Player is selected.
 	/// </summary>
+	[Button( "↺ Reset progress" )]
 	public void ResetProgress()
 	{
 		if ( IsProxy )
