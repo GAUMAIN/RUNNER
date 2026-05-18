@@ -19,8 +19,9 @@
 					int lvl = _stats.GetUpgradeLevel( upg.Type );
 					long cost = ShopUpgrades.CostAtLevel( upg, lvl );
 					bool affordable = _stats.Coins >= cost;
+					var capturedType = upg.Type;
 
-					<div class="row @(affordable ? "affordable" : "broke")">
+					<div class="row @(affordable ? "affordable" : "broke")" @onclick=@(() => OnRowClicked(capturedType))>
 						<div class="hotkey">@upg.Hotkey</div>
 						<div class="info">
 							<div class="name">@upg.Name</div>
@@ -42,6 +43,7 @@
 @code
 {
 	private bool _visible;
+	private bool _wasVisible;
 	private PlayerStats _stats;
 
 	protected override void OnUpdate()
@@ -57,6 +59,20 @@
 			_visible = false;
 			_stats = null;
 		}
+
+		// Toggle cursor mode with the modal — visible while shopping, locked otherwise.
+		if ( _visible != _wasVisible )
+		{
+			Mouse.Visible = _visible;
+			_wasVisible = _visible;
+		}
+	}
+
+	private void OnRowClicked( UpgradeType type )
+	{
+		if ( !_stats.IsValid() )
+			return;
+		_stats.TryBuyUpgrade( type );
 	}
 
 	protected override int BuildHash()

@@ -170,6 +170,11 @@ public sealed class PlayerPawn : Component
 
 	private void HandleLookInput()
 	{
+		// When a modal UI (Shop, Rebirth, etc.) frees the cursor, skip the look
+		// update so the camera doesn't spin while the user is clicking.
+		if ( Mouse.Visible )
+			return;
+
 		var ee = EyeAngles;
 		ee += Input.AnalogLook * 0.5f;
 		ee.pitch = ee.pitch.Clamp( -89f, 89f );
