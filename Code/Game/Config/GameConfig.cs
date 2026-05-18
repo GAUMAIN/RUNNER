@@ -28,7 +28,7 @@ public static class GameConfig
 	public const float ProfileSaveThrottleSeconds = 5f;
 
 	// ── Rebirth ───────────────────────────────────────────────────────────────
-	public const int MinLevelForRebirth = 10;
+	public const int MinLevelForRebirth = 25;
 
 	/// <summary>Each completed rebirth grants this much extra to Speed / XP / Coin gains.</summary>
 	public const float RebirthBonusPerCount = 0.50f;
