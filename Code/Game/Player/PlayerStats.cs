@@ -212,4 +212,25 @@ public sealed class PlayerStats : Component
 		if ( _profileLoaded )
 			_ = SaveProfileAsync();
 	}
+
+	/// <summary>
+	/// Dev / testing: wipe progression so you can re-test the level at base speed.
+	/// Resets Xp, Level, Coins, and the XP accumulator. Persists immediately.
+	/// </summary>
+	public void ResetProgress()
+	{
+		if ( IsProxy )
+			return;
+
+		Xp = 0;
+		Level = 1;
+		Coins = 0;
+		_runUnitsAccumulator = 0f;
+		_dirty = true;
+
+		Log.Info( "[Runner] Progress reset → Lvl 1 · 0 XP · 0 coins" );
+
+		if ( _profileLoaded )
+			_ = SaveProfileAsync();
+	}
 }

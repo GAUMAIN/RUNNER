@@ -47,6 +47,8 @@
 			<div class="speed-value">@((int)_speed)</div>
 			<div class="speed-unit">u/s</div>
 		</div>
+
+		<div class="dev-reset" @onclick=@OnResetClick>↺ RESET PROGRESS</div>
 	}
 	else
 	{
@@ -86,6 +88,12 @@
 		_timeSinceLevelUp = 0f;
 		if ( LevelUpSound is not null )
 			Sound.Play( LevelUpSound );
+	}
+
+	private void OnResetClick()
+	{
+		if ( _stats.IsValid() )
+			_stats.ResetProgress();
 	}
 
 	public float XpPercent => _xpNeeded <= 0 ? 0f : ((float)_xpInLevel / _xpNeeded) * 100f;
