@@ -40,6 +40,11 @@ public sealed class PlayerProfile
 	public float XpMultiplier { get; set; } = 1f;
 	public float CoinMultiplier { get; set; } = 1f;
 
+	// ── Shop upgrade levels (each one adds a permanent percentage) ────────────
+	public int Upgrade_Speed { get; set; }
+	public int Upgrade_Xp { get; set; }
+	public int Upgrade_Coin { get; set; }
+
 	// ── Lifetime stats ─────────────────────────────────────────────────────────
 	public long LifetimeDistanceTraveled { get; set; }
 	public int RacesWon { get; set; }

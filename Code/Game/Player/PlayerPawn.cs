@@ -160,10 +160,10 @@ public sealed class PlayerPawn : Component
 
 		float speed = Input.Down( "Run" ) ? RunSpeed : WalkSpeed;
 
-		// Apply level-based multiplier — long-term speed scaling lives in PlayerStats.
+		// Apply level-based × shop-based multipliers — long-term speed scaling lives in PlayerStats.
 		var stats = GameObject.Components.Get<PlayerStats>();
 		if ( stats.IsValid() )
-			speed *= stats.SpeedMultiplier;
+			speed *= stats.TotalSpeedMultiplier;
 
 		WishVelocity *= speed;
 	}

@@ -1,0 +1,70 @@
+@using System
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Runner.Economy
+@using Runner.Player
+@using Runner.World
+@inherits PanelComponent
+
+<root>
+	@if ( _visible && _stats.IsValid() )
+	{
+		<div class="shop">
+			<div class="title">UPGRADES SHOP</div>
+
+			<div class="rows">
+				@foreach ( var upg in ShopUpgrades.All )
+				{
+					int lvl = _stats.GetUpgradeLevel( upg.Type );
+					long cost = ShopUpgrades.CostAtLevel( upg, lvl );
+					bool affordable = _stats.Coins >= cost;
+
+					<div class="row @(affordable ? "affordable" : "broke")">
+						<div class="hotkey">@upg.Hotkey</div>
+						<div class="info">
+							<div class="name">@upg.Name</div>
+							<div class="lvl">Lvl @lvl</div>
+						</div>
+						<div class="cost">
+							<span class="cost-coin">●</span>
+							<span class="cost-value">@cost</span>
+						</div>
+					</div>
+				}
+			</div>
+
+			<div class="hint">Press 1 · 2 · 3 to buy   ·   walk off the pad to close</div>
+		</div>
+	}
+</root>
+
+@code
+{
+	private bool _visible;
+	private PlayerStats _stats;
+
+	protected override void OnUpdate()
+	{
+		var pad = Scene.GetAllComponents<ShopPad>().FirstOrDefault();
+		if ( pad.IsValid() )
+		{
+			_visible = pad.IsPlayerNear;
+			_stats = pad.NearbyStats;
+		}
+		else
+		{
+			_visible = false;
+			_stats = null;
+		}
+	}
+
+	protected override int BuildHash()
+	{
+		long coins = _stats.IsValid() ? _stats.Coins : 0;
+		int sp = _stats.IsValid() ? _stats.Upgrade_Speed : 0;
+		int xp = _stats.IsValid() ? _stats.Upgrade_Xp : 0;
+		int cn = _stats.IsValid() ? _stats.Upgrade_Coin : 0;
+		return HashCode.Combine( _visible, coins, sp, xp, cn );
+	}
+}

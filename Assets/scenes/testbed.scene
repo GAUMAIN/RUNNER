@@ -235,6 +235,13 @@
           "Static": true,
           "Surface": null,
           "SurfaceVelocity": "0,0,0"
+        },
+        {
+          "__type": "Runner.World.ShopPad",
+          "__guid": "5e9f17ea-a8de-4d2d-809a-cf3ef6994e91",
+          "__enabled": true,
+          "Flags": 0,
+          "TriggerRadius": 120
         }
       ],
       "Children": []
@@ -948,6 +955,31 @@
               "OnComponentFixedUpdate": null,
               "OnComponentStart": null,
               "OnComponentUpdate": null
+            }
+          ],
+          "Children": []
+        },
+        {
+          "__guid": "351ae6c0-9c54-472f-bd82-7e177a85412e",
+          "__version": 2,
+          "Flags": 0,
+          "Name": "Shop",
+          "Position": "0,0,0",
+          "Rotation": "0,0,0,1",
+          "Scale": "1,1,1",
+          "Tags": "",
+          "Enabled": true,
+          "NetworkMode": 2,
+          "NetworkFlags": 0,
+          "NetworkOrphaned": 0,
+          "NetworkTransmit": true,
+          "OwnerTransfer": 1,
+          "Components": [
+            {
+              "__type": "ShopPanel",
+              "__guid": "5b3a7e22-5a6b-4d05-9876-a37e21bcd5e1",
+              "__enabled": true,
+              "Flags": 0
             }
           ],
           "Children": []

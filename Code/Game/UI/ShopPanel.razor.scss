@@ -1,0 +1,128 @@
+$accent: #4aa3ff;
+$accent-glow: rgba(74, 163, 255, 0.55);
+$panel-bg: rgba(10, 14, 24, 0.85);
+$panel-stroke: rgba(255, 255, 255, 0.1);
+$text-main: #f3f7ff;
+$text-dim: rgba(243, 247, 255, 0.55);
+$coin-color: #ffd64a;
+$red: #ff5c5c;
+
+ShopPanel
+{
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	pointer-events: none;
+	font-family: Poppins;
+	color: $text-main;
+	justify-content: center;
+	align-items: center;
+
+	.shop
+	{
+		flex-direction: column;
+		width: 480px;
+		padding: 24px 28px;
+		background-color: $panel-bg;
+		border: 1px solid $panel-stroke;
+		border-radius: 12px;
+		backdrop-filter: blur( 20px );
+		box-shadow: 0 0 40px rgba(74, 163, 255, 0.25);
+
+		.title
+		{
+			font-size: 18px;
+			font-weight: 700;
+			letter-spacing: 4px;
+			color: $accent;
+			text-shadow: 0 0 12px $accent-glow;
+			text-align: center;
+			padding-bottom: 14px;
+			margin-bottom: 14px;
+			border-bottom: 1px solid $panel-stroke;
+		}
+
+		.rows
+		{
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.row
+		{
+			flex-direction: row;
+			align-items: center;
+			gap: 14px;
+			padding: 12px 14px;
+			background-color: rgba(255, 255, 255, 0.03);
+			border: 1px solid rgba(255, 255, 255, 0.05);
+			border-radius: 8px;
+
+			.hotkey
+			{
+				width: 34px;
+				height: 34px;
+				justify-content: center;
+				align-items: center;
+				font-size: 18px;
+				font-weight: 700;
+				color: $accent;
+				background-color: rgba(74, 163, 255, 0.12);
+				border: 1px solid rgba(74, 163, 255, 0.4);
+				border-radius: 6px;
+			}
+
+			.info
+			{
+				flex-direction: column;
+				flex-grow: 1;
+				gap: 2px;
+
+				.name
+				{
+					font-size: 15px;
+					font-weight: 600;
+				}
+
+				.lvl
+				{
+					font-size: 11px;
+					color: $text-dim;
+					letter-spacing: 1px;
+				}
+			}
+
+			.cost
+			{
+				flex-direction: row;
+				align-items: center;
+				gap: 6px;
+				font-size: 16px;
+				font-weight: 700;
+
+				.cost-coin { color: $coin-color; }
+				.cost-value { color: $text-main; }
+			}
+		}
+
+		.row.broke
+		{
+			opacity: 0.5;
+
+			.cost .cost-value { color: $red; }
+		}
+
+		.row.affordable:hover { background-color: rgba(74, 163, 255, 0.08); }
+
+		.hint
+		{
+			margin-top: 14px;
+			font-size: 11px;
+			letter-spacing: 1px;
+			color: $text-dim;
+			text-align: center;
+		}
+	}
+}

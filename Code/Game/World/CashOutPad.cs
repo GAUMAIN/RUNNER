@@ -55,9 +55,13 @@ public sealed class CashOutPad : Component
 			if ( !stats.IsValid() )
 				continue;
 
-			Log.Info( $"[CashOutPad] {pawn.GameObject.Name} cashed out +{CoinReward}" );
+			long reward = (long)(CoinReward * stats.CoinGainMultiplier);
+			if ( reward < CoinReward )
+				reward = CoinReward;
 
-			stats.GrantCoins( CoinReward );
+			Log.Info( $"[CashOutPad] {pawn.GameObject.Name} cashed out +{reward} (base {CoinReward} × {stats.CoinGainMultiplier:0.00})" );
+
+			stats.GrantCoins( reward );
 			TeleportPawn( pawn, SpawnPosition );
 
 			if ( CashOutSound is not null )

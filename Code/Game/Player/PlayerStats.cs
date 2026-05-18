@@ -4,6 +4,7 @@ using Sandbox;
 using Runner.Backend;
 using Runner.Config;
 using Runner.Data;
+using Runner.Economy;
 using Runner.Events;
 using Runner.Systems;
 
@@ -31,6 +32,11 @@ public sealed class PlayerStats : Component
 	/// <summary>Persistent coin balance. Awarded only by reaching a cash-out pad.</summary>
 	[Sync] public long Coins { get; set; }
 
+	// ── Shop upgrades (persistent, bought from Pad_Shop) ─────────────────────
+	[Sync] public int Upgrade_Speed { get; set; }
+	[Sync] public int Upgrade_Xp { get; set; }
+	[Sync] public int Upgrade_Coin { get; set; }
+
 	// ── Persistence ──────────────────────────────────────────────────────────
 	private static readonly IProfileRepository Repo = new LocalProfileRepository();
 
@@ -42,6 +48,21 @@ public sealed class PlayerStats : Component
 	// ── Derived (don't store, always compute) ────────────────────────────────
 	public float SpeedMultiplier
 		=> SpeedCurve.MultiplierAtLevel( Level, BaseSpeedMultiplier, SpeedGainPerLevel );
+
+	/// <summary>Level-based speed × shop's permanent speed bonus.</summary>
+	public float TotalSpeedMultiplier
+		=> SpeedMultiplier * (1f + Upgrade_Speed * 0.05f);
+
+	public float XpGainMultiplier => 1f + Upgrade_Xp * 0.10f;
+	public float CoinGainMultiplier => 1f + Upgrade_Coin * 0.10f;
+
+	public int GetUpgradeLevel( UpgradeType type ) => type switch
+	{
+		UpgradeType.Speed => Upgrade_Speed,
+		UpgradeType.Xp    => Upgrade_Xp,
+		UpgradeType.Coin  => Upgrade_Coin,
+		_ => 0
+	};
 
 	public (long CurrentInLevel, long NeededForNext) GetLevelProgress()
 	{
@@ -93,7 +114,10 @@ public sealed class PlayerStats : Component
 				Xp = profile.Xp;
 				Level = Math.Max( 1, profile.Level );
 				Coins = profile.Currencies != null && profile.Currencies.TryGetValue( "coins", out var c ) ? c : 0L;
-				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP · {Coins} coins" );
+				Upgrade_Speed = profile.Upgrade_Speed;
+				Upgrade_Xp = profile.Upgrade_Xp;
+				Upgrade_Coin = profile.Upgrade_Coin;
+				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP · {Coins} coins · upg S{Upgrade_Speed}/X{Upgrade_Xp}/C{Upgrade_Coin}" );
 			}
 			else
 			{
@@ -119,6 +143,9 @@ public sealed class PlayerStats : Component
 				PlayerId = _profileId,
 				Xp = Xp,
 				Level = Level,
+				Upgrade_Speed = Upgrade_Speed,
+				Upgrade_Xp = Upgrade_Xp,
+				Upgrade_Coin = Upgrade_Coin,
 				LastSeenAt = DateTime.UtcNow,
 			};
 			profile.Currencies["coins"] = Coins;
@@ -172,18 +199,23 @@ public sealed class PlayerStats : Component
 		if ( amount <= 0 )
 			return;
 
+		// Apply shop XP-gain multiplier (never below original amount).
+		long boosted = (long)(amount * XpGainMultiplier);
+		if ( boosted < amount )
+			boosted = amount;
+
 		int oldLevel = Level;
-		Xp += amount;
+		Xp += boosted;
 
 		var (newLevel, _, _) = XpCurve.ComputeLevel( Xp, BaseXpPerLevel, XpGrowth );
 		Level = newLevel;
 
-		EventBus.Publish( new PlayerXpGranted( SteamId(), amount, reason ) );
+		EventBus.Publish( new PlayerXpGranted( SteamId(), boosted, reason ) );
 		_dirty = true;
 
 		if ( newLevel > oldLevel )
 		{
-			Log.Info( $"[Runner] LEVEL UP! {oldLevel} → {newLevel} (×{SpeedMultiplier:0.00} speed)" );
+			Log.Info( $"[Runner] LEVEL UP! {oldLevel} → {newLevel} (×{TotalSpeedMultiplier:0.00} speed)" );
 			EventBus.Publish( new PlayerLeveledUp( SteamId(), newLevel, oldLevel ) );
 		}
 	}
@@ -215,7 +247,7 @@ public sealed class PlayerStats : Component
 
 	/// <summary>
 	/// Dev / testing: wipe progression so you can re-test the level at base speed.
-	/// Resets Xp, Level, Coins, and the XP accumulator. Persists immediately.
+	/// Resets Xp, Level, Coins, upgrades, and the XP accumulator. Persists immediately.
 	/// Exposed as a button in the Inspector when the Player is selected.
 	/// </summary>
 	[Button( "↺ Reset progress" )]
@@ -227,12 +259,49 @@ public sealed class PlayerStats : Component
 		Xp = 0;
 		Level = 1;
 		Coins = 0;
+		Upgrade_Speed = 0;
+		Upgrade_Xp = 0;
+		Upgrade_Coin = 0;
 		_runUnitsAccumulator = 0f;
 		_dirty = true;
 
-		Log.Info( "[Runner] Progress reset → Lvl 1 · 0 XP · 0 coins" );
+		Log.Info( "[Runner] Progress reset → Lvl 1 · 0 XP · 0 coins · upgrades cleared" );
 
 		if ( _profileLoaded )
 			_ = SaveProfileAsync();
+	}
+
+	// ── Shop purchase ────────────────────────────────────────────────────────
+
+	/// <summary>Attempt to buy the next level of an upgrade. Server-side; no-op if not enough coins.</summary>
+	public bool TryBuyUpgrade( UpgradeType type )
+	{
+		if ( IsProxy )
+			return false;
+
+		var upgrade = ShopUpgrades.GetByType( type );
+		if ( upgrade is null )
+			return false;
+
+		int currentLevel = GetUpgradeLevel( type );
+		long cost = ShopUpgrades.CostAtLevel( upgrade, currentLevel );
+		if ( Coins < cost )
+			return false;
+
+		Coins -= cost;
+		switch ( type )
+		{
+			case UpgradeType.Speed: Upgrade_Speed = currentLevel + 1; break;
+			case UpgradeType.Xp:    Upgrade_Xp = currentLevel + 1; break;
+			case UpgradeType.Coin:  Upgrade_Coin = currentLevel + 1; break;
+		}
+
+		_dirty = true;
+		Log.Info( $"[Shop] Bought {type} → lvl {currentLevel + 1} · -{cost} coins (now {Coins})" );
+
+		if ( _profileLoaded )
+			_ = SaveProfileAsync();
+
+		return true;
 	}
 }
