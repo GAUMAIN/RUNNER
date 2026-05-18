@@ -307,6 +307,7 @@ public sealed class PlayerStats : Component
 
 		_dirty = true;
 		Log.Info( $"[Shop] Bought {type} → lvl {currentLevel + 1} · -{cost} coins (now {Coins})" );
+		EventBus.Publish( new PlayerCurrencyChanged( SteamId(), "coins", -cost, Coins ) );
 
 		if ( _profileLoaded )
 			_ = SaveProfileAsync();

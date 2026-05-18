@@ -58,6 +58,9 @@
 @code
 {
 	[Property] public SoundEvent LevelUpSound { get; set; }
+	[Property] public SoundEvent CashOutSound { get; set; }
+	[Property] public SoundEvent RebirthSound { get; set; }
+	[Property] public SoundEvent ShopBuySound { get; set; }
 
 	private PlayerStats _stats = null;
 	private PlayerPawn _pawn = null;
@@ -73,12 +76,16 @@
 	{
 		base.OnEnabled();
 		EventBus.Subscribe<PlayerLeveledUp>( OnLevelUp );
+		EventBus.Subscribe<PlayerCurrencyChanged>( OnCurrencyChanged );
+		EventBus.Subscribe<PlayerRebirthed>( OnRebirthed );
 	}
 
 	protected override void OnDisabled()
 	{
 		base.OnDisabled();
 		EventBus.Unsubscribe<PlayerLeveledUp>( OnLevelUp );
+		EventBus.Unsubscribe<PlayerCurrencyChanged>( OnCurrencyChanged );
+		EventBus.Unsubscribe<PlayerRebirthed>( OnRebirthed );
 	}
 
 	private void OnLevelUp( PlayerLeveledUp evt )
@@ -86,6 +93,23 @@
 		_timeSinceLevelUp = 0f;
 		if ( LevelUpSound is not null )
 			Sound.Play( LevelUpSound );
+	}
+
+	private void OnCurrencyChanged( PlayerCurrencyChanged evt )
+	{
+		if ( evt.Currency != "coins" )
+			return;
+
+		if ( evt.Delta > 0 && CashOutSound is not null )
+			Sound.Play( CashOutSound );
+		else if ( evt.Delta < 0 && ShopBuySound is not null )
+			Sound.Play( ShopBuySound );
+	}
+
+	private void OnRebirthed( PlayerRebirthed evt )
+	{
+		if ( RebirthSound is not null )
+			Sound.Play( RebirthSound );
 	}
 
 	public float XpPercent => _xpNeeded <= 0 ? 0f : ((float)_xpInLevel / _xpNeeded) * 100f;
