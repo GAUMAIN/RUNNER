@@ -83,6 +83,11 @@ public sealed class PlayerPawn : Component
 		base.OnStart();
 		_spawnPosition = WorldPosition;
 		_spawnCaptured = true;
+
+		// Required so we can find + manipulate the head bone in FPS (hide it
+		// so the camera isn't staring at the inside of the citizen's skull).
+		if ( BodyRenderer.IsValid() )
+			BodyRenderer.CreateBoneObjects = true;
 	}
 
 	/// <summary>Instant TP back to the captured spawn point. Called on death-by-fall and by cash-out pads.</summary>
@@ -109,15 +114,68 @@ public sealed class PlayerPawn : Component
 			if ( !Mouse.Visible && Input.Pressed( "View" ) )
 				FirstPerson = !FirstPerson;
 
-			// Hide our own body in 1st person so the camera isn't inside the head.
+			// In FPS we KEEP the body rendering (so the arms holding the knife are
+			// visible) — the head itself is hidden in OnPreRender, after the
+			// animgraph has finished computing bone transforms.
 			if ( BodyRenderer.IsValid() )
-				BodyRenderer.RenderType = FirstPerson
-					? ModelRenderer.ShadowRenderType.ShadowsOnly
-					: ModelRenderer.ShadowRenderType.On;
+				BodyRenderer.RenderType = ModelRenderer.ShadowRenderType.On;
 		}
 
 		RotateBodyToVelocity();
 		DriveCitizenAnimation();
+	}
+
+	// Cached bones that need to be shrunk to nothing in 1st person so the
+	// camera doesn't see the inside of the skull. Resolved lazily once
+	// CitizenAnimationHelper has driven the rig at least one frame.
+	private int[] _headBoneIndices;
+
+	/// <summary>
+	/// Runs after the animation graph has computed bone transforms for the frame,
+	/// so any scale we write here actually sticks for rendering instead of being
+	/// overwritten by the animation pass.
+	/// </summary>
+	protected override void OnPreRender()
+	{
+		if ( IsProxy ) return;
+		ApplyHeadVisibility( hide: FirstPerson );
+	}
+
+	/// <summary>
+	/// Hide / show the citizen's head by scaling the head-related bones. Scaling
+	/// to (near-)zero collapses the head verts to a point inside the neck, which
+	/// is invisible to a camera sitting at eye height looking forward.
+	/// </summary>
+	private void ApplyHeadVisibility( bool hide )
+	{
+		if ( !BodyRenderer.IsValid() || BodyRenderer.Model is null )
+			return;
+
+		// Resolve head bone indices once. The Citizen rig exposes several
+		// head-adjacent bones; hide all of them to also catch eyes/jaw/teeth.
+		if ( _headBoneIndices is null )
+		{
+			string[] candidates = new[] { "head", "head_jaw", "eye_R", "eye_L" };
+			var found = new System.Collections.Generic.List<int>();
+			int n = BodyRenderer.Model.BoneCount;
+			for ( int i = 0; i < n; i++ )
+			{
+				var o = BodyRenderer.GetBoneObject( i );
+				if ( !o.IsValid() ) continue;
+				foreach ( var c in candidates )
+				{
+					if ( o.Name == c ) { found.Add( i ); break; }
+				}
+			}
+			_headBoneIndices = found.ToArray();
+		}
+
+		var targetScale = hide ? new Vector3( 0.001f, 0.001f, 0.001f ) : Vector3.One;
+		foreach ( var i in _headBoneIndices )
+		{
+			var o = BodyRenderer.GetBoneObject( i );
+			if ( o.IsValid() ) o.LocalScale = targetScale;
+		}
 	}
 
 	/// <summary>Feed the citizen animgraph with current state so it actually animates.</summary>
