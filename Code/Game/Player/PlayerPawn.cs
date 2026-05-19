@@ -83,11 +83,6 @@ public sealed class PlayerPawn : Component
 		base.OnStart();
 		_spawnPosition = WorldPosition;
 		_spawnCaptured = true;
-
-		// Required so we can find + manipulate the head bone in FPS (hide it
-		// so the camera isn't staring at the inside of the citizen's skull).
-		if ( BodyRenderer.IsValid() )
-			BodyRenderer.CreateBoneObjects = true;
 	}
 
 	/// <summary>Instant TP back to the captured spawn point. Called on death-by-fall and by cash-out pads.</summary>
@@ -114,93 +109,15 @@ public sealed class PlayerPawn : Component
 			if ( !Mouse.Visible && Input.Pressed( "View" ) )
 				FirstPerson = !FirstPerson;
 
-			// In FPS we KEEP the body rendering (so the arms holding the knife are
-			// visible) — the head itself is hidden in OnPreRender, after the
-			// animgraph has finished computing bone transforms.
+			// Hide our own body in 1st person so the camera isn't inside the head.
 			if ( BodyRenderer.IsValid() )
-				BodyRenderer.RenderType = ModelRenderer.ShadowRenderType.On;
+				BodyRenderer.RenderType = FirstPerson
+					? ModelRenderer.ShadowRenderType.ShadowsOnly
+					: ModelRenderer.ShadowRenderType.On;
 		}
 
 		RotateBodyToVelocity();
 		DriveCitizenAnimation();
-	}
-
-	// Cached bones that need to be shrunk to nothing in 1st person so the
-	// camera doesn't see the inside of the skull. Resolved lazily once
-	// CitizenAnimationHelper has driven the rig at least one frame.
-	private int[] _headBoneIndices;
-
-	/// <summary>
-	/// Runs after the animation graph has computed bone transforms for the frame,
-	/// so any scale we write here actually sticks for rendering instead of being
-	/// overwritten by the animation pass.
-	/// </summary>
-	protected override void OnPreRender()
-	{
-		if ( IsProxy ) return;
-		ApplyHeadVisibility( hide: FirstPerson );
-	}
-
-	/// <summary>
-	/// Hide / show the citizen's head by both scaling the head-related bones to
-	/// nothing AND shoving them far below the world. Scale alone wasn't enough on
-	/// the Citizen rig — the collapsed verts ended up exactly where the camera
-	/// sits, so we still saw "inside the head". Shoving them down moves those
-	/// verts out of the view frustum entirely.
-	/// </summary>
-	private void ApplyHeadVisibility( bool hide )
-	{
-		if ( !BodyRenderer.IsValid() || BodyRenderer.Model is null )
-			return;
-
-		// Resolve head bone indices once with broad name matching — any bone whose
-		// name contains "head", "eye", "jaw", "tooth" or "teeth" is fair game.
-		if ( _headBoneIndices is null )
-		{
-			var found = new System.Collections.Generic.List<int>();
-			int n = BodyRenderer.Model.BoneCount;
-			for ( int i = 0; i < n; i++ )
-			{
-				var o = BodyRenderer.GetBoneObject( i );
-				if ( !o.IsValid() ) continue;
-				var name = o.Name?.ToLowerInvariant() ?? string.Empty;
-				if ( name.Contains( "head" )
-					|| name.Contains( "eye" )
-					|| name.Contains( "jaw" )
-					|| name.Contains( "tooth" )
-					|| name.Contains( "teeth" )
-					|| name.Contains( "mouth" )
-					|| name.Contains( "ear_" )
-					|| name == "neck_0" || name == "neck_1" )
-				{
-					found.Add( i );
-				}
-			}
-			_headBoneIndices = found.ToArray();
-			Log.Info( $"[PlayerPawn] Cached {_headBoneIndices.Length} head/face bones for FPS hide." );
-		}
-
-		if ( hide )
-		{
-			var sink = new Vector3( 0, 0, -10000f );
-			foreach ( var i in _headBoneIndices )
-			{
-				var o = BodyRenderer.GetBoneObject( i );
-				if ( !o.IsValid() ) continue;
-				o.LocalScale = Vector3.Zero;
-				o.WorldPosition = sink; // far below the world — verts follow
-			}
-		}
-		else
-		{
-			// In TPS, just restore scale — the animation pass will pull the
-			// positions back to their bind/anim values automatically.
-			foreach ( var i in _headBoneIndices )
-			{
-				var o = BodyRenderer.GetBoneObject( i );
-				if ( o.IsValid() ) o.LocalScale = Vector3.One;
-			}
-		}
 	}
 
 	/// <summary>Feed the citizen animgraph with current state so it actually animates.</summary>
@@ -221,26 +138,7 @@ public sealed class PlayerPawn : Component
 		AnimationHelper.MoveStyle = IsSprinting
 			? CitizenAnimationHelper.MoveStyles.Run
 			: CitizenAnimationHelper.MoveStyles.Walk;
-
-		// Knife = melee, so the citizen holds arms forward in a swing-ready stance
-		// (instead of arms relaxed at the sides). This is what makes the held
-		// knife visible from FPS at all.
-		AnimationHelper.HoldType = CitizenAnimationHelper.HoldTypes.Swing;
-		AnimationHelper.Handedness = CitizenAnimationHelper.Hand.Right;
-
-		// Inspect — F triggers the citizen's deploy animation, which raises the
-		// knife up. Throttled so spamming F doesn't cancel itself.
-		if ( !Runner.Config.UserSettings.IsPaused
-			&& _timeSinceDeploy > DeployCooldown
-			&& Input.Pressed( "Inspect" ) )
-		{
-			AnimationHelper.TriggerDeploy();
-			_timeSinceDeploy = 0f;
-		}
 	}
-
-	private TimeSince _timeSinceDeploy = 999f;
-	private const float DeployCooldown = 1.0f;
 
 	protected override void OnFixedUpdate()
 	{

@@ -163,9 +163,8 @@ public sealed class KnifeViewModel : Component
 			return;
 		}
 
-		// Inspect SOUND only — the actual visual inspect is driven by
-		// CitizenAnimationHelper.TriggerDeploy() in PlayerPawn, so the citizen's
-		// arm + held knife raises naturally instead of the ugly camera spin.
+		// Inspect trigger — only meaningful in FPS, and skipped when paused so we
+		// don't fire it while the user is dragging sliders in the pause menu.
 		if ( pawn.FirstPerson
 			&& !Runner.Config.UserSettings.IsPaused
 			&& !IsInspecting
@@ -195,27 +194,33 @@ public sealed class KnifeViewModel : Component
 				return;
 			}
 
-			// In FPS we now show the BONE-attached knife (held in the citizen's
-			// right hand) rather than a camera-anchored knife — that way it lines
-			// up with the citizen's hand animation and the player sees their own
-			// arms holding it. The camera-anchored root stays hidden.
-			_root.Enabled = false;
+			_root.Enabled = true;
+			_bladeRenderer.Tint = bladeTint;
+			ApplyShape( knife.Id, _blade, _handle );
 
-			if ( TryResolveHoldTransform( pawn, out var boneTxFps ) )
-			{
-				EnsureTpsMeshes();
-				_tpsRoot.Enabled = true;
-				var tweakRot = Rotation.From( TpsPitch, TpsYaw, TpsRoll );
-				_tpsRoot.WorldRotation = boneTxFps.Rotation * tweakRot;
-				_tpsRoot.WorldPosition = boneTxFps.Position + boneTxFps.Rotation * TpsLocalOffset;
-				_tpsRoot.WorldScale = Vector3.One;
-				_tpsBladeRenderer.Tint = bladeTint;
-				ApplyShape( knife.Id, _tpsBlade, _tpsHandle );
-			}
-			else if ( _tpsRoot.IsValid() )
-			{
-				_tpsRoot.Enabled = false;
-			}
+			// Inspect anim: bell-shaped position pull-in + smooth full spin around the
+			// camera-forward axis. t goes 0→1 over InspectDuration; ramp peaks at 0.5
+			// (knife closest to camera, raised, centered).
+			float t = IsInspecting ? Math.Clamp( (float)_timeSinceInspect / InspectDuration, 0f, 1f ) : 0f;
+			float ramp = MathF.Sin( t * MathF.PI );      // 0 → 1 → 0
+			float spin = t * 360f;                        // one full revolution
+
+			float fwd   = ForwardOffset - ramp * 4f;     // pull closer to the face
+			float right = RightOffset   - ramp * 8f;     // slide toward center
+			float down  = DownOffset    - ramp * 5f;     // raise up
+
+			var camRot = _camera.WorldRotation;
+			var camPos = _camera.WorldPosition;
+			var worldOffset =
+				  camRot.Forward * fwd
+				+ camRot.Right   * right
+				+ camRot.Up      * -down;
+
+			_root.WorldPosition = camPos + worldOffset;
+			_root.WorldRotation = camRot
+				* Rotation.From( PitchTweak, YawTweak, RollTweak )
+				* Rotation.From( 0f, 0f, spin );        // roll around forward
+			_root.WorldScale = Vector3.One;
 		}
 		else
 		{
@@ -296,13 +301,13 @@ public sealed class KnifeViewModel : Component
 			try
 			{
 				var names = new System.Collections.Generic.List<string>();
-				int sample = System.Math.Min( body.Model.BoneCount, 40 );
-				for ( int i = 0; i < sample; i++ )
+				int count = System.Math.Min( body.Model.BoneCount, 40 );
+				for ( int i = 0; i < count; i++ )
 				{
 					var o = body.GetBoneObject( i );
 					if ( o.IsValid() ) names.Add( o.Name );
 				}
-				Log.Warning( $"[KnifeViewModel] No grip bone found. Available bones (first {sample} of {body.Model.BoneCount}): {string.Join( ", ", names )}" );
+				Log.Warning( $"[KnifeViewModel] No grip bone found. Available bones (first {count} of {body.Model.BoneCount}): {string.Join( ", ", names )}" );
 			}
 			catch ( System.Exception e )
 			{
