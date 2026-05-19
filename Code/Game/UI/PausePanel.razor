@@ -43,7 +43,7 @@
 
 @code
 {
-	public static bool IsOpen { get; private set; }
+	public static bool IsOpen => UserSettings.IsPaused;
 
 	private bool _settingsView;
 	private float _volume = 1f;
@@ -77,9 +77,9 @@
 
 	private void Toggle()
 	{
-		IsOpen = !IsOpen;
-		Mouse.Visible = IsOpen;
-		if ( !IsOpen )
+		UserSettings.IsPaused = !UserSettings.IsPaused;
+		Mouse.Visible = UserSettings.IsPaused;
+		if ( !UserSettings.IsPaused )
 			_settingsView = false;
 	}
 
@@ -89,10 +89,11 @@
 
 	private void OnQuit()
 	{
-		// In editor play mode this just stops play. In standalone it'll close to menu.
-		IsOpen = false;
+		// No main menu to return to yet; just close the pause panel.
+		// Replace with a scene/main-menu load once that exists.
+		UserSettings.IsPaused = false;
 		Mouse.Visible = false;
-		Sandbox.Game.Close();
+		_settingsView = false;
 	}
 
 	protected override int BuildHash() => HashCode.Combine( IsOpen, _settingsView, _volume, _fov, _sensitivity );

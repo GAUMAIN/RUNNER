@@ -1,7 +1,6 @@
 using Sandbox;
 using System.Linq;
 using Runner.Config;
-using Runner.UI;
 
 namespace Runner.Player;
 
@@ -94,7 +93,7 @@ public sealed class PlayerPawn : Component
 			return;
 
 		// Pause menu open → freeze movement input (don't accumulate velocity).
-		if ( global::PausePanel.IsOpen )
+		if ( UserSettings.IsPaused )
 			return;
 
 		// Fell into the void — respawn instantly, skip movement this tick.

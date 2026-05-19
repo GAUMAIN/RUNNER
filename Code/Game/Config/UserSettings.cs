@@ -14,4 +14,7 @@ public static class UserSettings
 
 	/// <summary>Mouse look sensitivity multiplier. PlayerPawn multiplies AnalogLook by this. 0.1–3.0.</summary>
 	public static float MouseSensitivity { get; set; } = 0.5f;
+
+	/// <summary>True while the pause menu is open. Other systems freeze input when this is true.</summary>
+	public static bool IsPaused { get; set; }
 }
