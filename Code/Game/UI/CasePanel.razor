@@ -1,0 +1,140 @@
+@using System
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Runner.Config
+@using Runner.Economy
+@using Runner.Player
+@using Runner.World
+@inherits PanelComponent
+
+<root>
+	@if ( _visible && _stats.IsValid() )
+	{
+		<div class="case">
+			<div class="title">KNIFE CASE</div>
+
+			@* Last-rolled celebration banner (visible for ~4s after a roll) *@
+			@if ( _showReveal && _lastKnife is not null )
+			{
+				<div class="reveal @($"rarity-{_lastKnife.Rarity.ToString().ToLower()}")">
+					<div class="reveal-label">YOU UNBOXED</div>
+					<div class="reveal-name">@_lastKnife.Name</div>
+					<div class="reveal-rarity">@KnifeCatalog.RarityLabel( _lastKnife.Rarity )</div>
+				</div>
+			}
+
+			<div class="catalog">
+				@foreach ( var k in KnifeCatalog.All )
+				{
+					bool owned = _stats.OwnsKnife( k.Id );
+					bool equipped = _stats.EquippedKnifeId == k.Id;
+					var capturedId = k.Id;
+					<div class="knife @($"rarity-{k.Rarity.ToString().ToLower()}") @(owned ? "owned" : "locked") @(equipped ? "equipped" : "")"
+						 @onclick=@(() => OnKnifeClicked(capturedId))>
+						<div class="kname">@k.Name</div>
+						<div class="kr">@KnifeCatalog.RarityLabel( k.Rarity ) · @((k.Probability * 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))%</div>
+						@if ( equipped )
+						{
+							<div class="ktag">EQUIPPED</div>
+						}
+						else if ( owned )
+						{
+							<div class="ktag muted">OWNED · click to equip</div>
+						}
+					</div>
+				}
+			</div>
+
+			<div class="footer">
+				<div class="meta">
+					Cases opened: <span class="strong">@_stats.CasesOpened</span>
+					&nbsp;·&nbsp; Coins: <span class="strong gold">@_stats.Coins</span>
+					&nbsp;·&nbsp; Rebirths: <span class="strong">@_stats.Rebirths</span>
+				</div>
+
+				@if ( _stats.Rebirths < GameConfig.MinRebirthsForKnifeCase )
+				{
+					<div class="open-btn locked">REQUIRES REBIRTH @GameConfig.MinRebirthsForKnifeCase</div>
+				}
+				else if ( _stats.Coins < GameConfig.KnifeCaseCost )
+				{
+					<div class="open-btn locked">NEED @GameConfig.KnifeCaseCost COINS</div>
+				}
+				else
+				{
+					<div class="open-btn enabled" @onclick=@OnOpenClicked>OPEN CASE  ·  @GameConfig.KnifeCaseCost coins  ·  (E)</div>
+				}
+			</div>
+		</div>
+	}
+</root>
+
+@code
+{
+	private bool _visible;
+	private bool _wasVisible;
+	private PlayerStats _stats;
+
+	private bool _showReveal;
+	private long _lastRevealTicks;
+	private KnifeSkin _lastKnife;
+	private const float RevealDuration = 4f;
+
+	protected override void OnUpdate()
+	{
+		var pad = Scene.GetAllComponents<CasePad>().FirstOrDefault();
+		if ( pad.IsValid() )
+		{
+			_visible = pad.IsPlayerNear;
+			_stats = pad.NearbyStats;
+		}
+		else
+		{
+			_visible = false;
+			_stats = null;
+		}
+
+		if ( _visible != _wasVisible )
+		{
+			Mouse.Visible = _visible;
+			_wasVisible = _visible;
+		}
+
+		// Check for a new roll and trigger reveal
+		if ( _stats.IsValid() && _stats.LastRolledTicks != _lastRevealTicks && !string.IsNullOrEmpty( _stats.LastRolledKnifeId ) )
+		{
+			_lastRevealTicks = _stats.LastRolledTicks;
+			_lastKnife = KnifeCatalog.GetById( _stats.LastRolledKnifeId );
+			_showReveal = true;
+		}
+
+		// Hide reveal after duration
+		if ( _showReveal && _lastRevealTicks > 0 )
+		{
+			float elapsed = (float)(DateTime.UtcNow.Ticks - _lastRevealTicks) / TimeSpan.TicksPerSecond;
+			if ( elapsed > RevealDuration )
+				_showReveal = false;
+		}
+	}
+
+	private void OnOpenClicked()
+	{
+		if ( !_stats.IsValid() ) return;
+		_stats.TryOpenKnifeCase();
+	}
+
+	private void OnKnifeClicked( string id )
+	{
+		if ( !_stats.IsValid() ) return;
+		if ( !_stats.OwnsKnife( id ) ) return;
+		_stats.EquipKnife( id );
+	}
+
+	protected override int BuildHash()
+	{
+		if ( !_stats.IsValid() )
+			return HashCode.Combine( _visible, 0 );
+		return HashCode.Combine( _visible, _stats.Coins, _stats.Rebirths, _stats.CasesOpened, _stats.OwnedKnivesCsv, _stats.EquippedKnifeId, _showReveal, _stats.LastRolledTicks );
+	}
+}

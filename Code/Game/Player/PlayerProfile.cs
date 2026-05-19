@@ -35,6 +35,12 @@ public sealed class PlayerProfile
 	public string EquippedTrailId { get; set; } = "";
 	public string EquippedAuraId { get; set; } = "";
 
+	// ── Knives (case shop) ────────────────────────────────────────────────────
+	/// <summary>Comma-separated knife ids the player owns (e.g. "steel,karambit").</summary>
+	public string OwnedKnivesCsv { get; set; } = "";
+	public string EquippedKnifeId { get; set; } = "";
+	public int CasesOpened { get; set; }
+
 	// ── Multipliers (derived from rebirths, gear, pets, boosts) ────────────────
 	public float SpeedMultiplier { get; set; } = 1f;
 	public float XpMultiplier { get; set; } = 1f;

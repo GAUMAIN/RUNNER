@@ -1,0 +1,171 @@
+$accent: #ff8a3a;
+$accent-glow: rgba(255, 138, 58, 0.55);
+$panel-bg: rgba(14, 9, 6, 0.92);
+$panel-stroke: rgba(255, 255, 255, 0.1);
+$text-main: #fff4e0;
+$text-dim: rgba(255, 244, 224, 0.55);
+$gold: #ffd64a;
+
+$rar-common:   #b3c4d4;
+$rar-uncommon: #6dffaa;
+$rar-rare:     #4aa3ff;
+$rar-epic:     #c47bff;
+$rar-mythic:   #ff7a4a;
+$rar-secret:   #ffd64a;
+
+CasePanel
+{
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	pointer-events: none;
+	font-family: Poppins;
+	color: $text-main;
+	justify-content: center;
+	align-items: center;
+
+	.case
+	{
+		flex-direction: column;
+		width: 640px;
+		padding: 24px 28px;
+		background-color: $panel-bg;
+		border: 1px solid $panel-stroke;
+		border-radius: 14px;
+		backdrop-filter: blur( 22px );
+		box-shadow: 0 0 50px rgba(255, 138, 58, 0.25);
+		gap: 14px;
+
+		.title
+		{
+			font-size: 22px;
+			font-weight: 800;
+			letter-spacing: 8px;
+			color: $accent;
+			text-shadow: 0 0 14px $accent-glow;
+			text-align: center;
+			padding-bottom: 12px;
+			border-bottom: 1px solid $panel-stroke;
+		}
+
+		.reveal
+		{
+			flex-direction: column;
+			align-items: center;
+			gap: 4px;
+			padding: 14px;
+			border-radius: 10px;
+			background-color: rgba(255, 138, 58, 0.08);
+			border: 1px solid rgba(255, 138, 58, 0.4);
+			animation: reveal-pop 0.5s ease-out;
+
+			.reveal-label { font-size: 11px; letter-spacing: 3px; color: $text-dim; }
+			.reveal-name  { font-size: 26px; font-weight: 800; color: $text-main; }
+			.reveal-rarity { font-size: 12px; letter-spacing: 3px; font-weight: 700; color: $accent; }
+
+			&.rarity-common   { border-color: $rar-common;   .reveal-rarity { color: $rar-common; } }
+			&.rarity-uncommon { border-color: $rar-uncommon; .reveal-rarity { color: $rar-uncommon; } }
+			&.rarity-rare     { border-color: $rar-rare;     .reveal-rarity { color: $rar-rare; } }
+			&.rarity-epic     { border-color: $rar-epic;     .reveal-rarity { color: $rar-epic; } }
+			&.rarity-mythic   { border-color: $rar-mythic;   .reveal-rarity { color: $rar-mythic; } box-shadow: 0 0 30px rgba(255, 122, 74, 0.6); }
+			&.rarity-secret   { border-color: $rar-secret;   .reveal-rarity { color: $rar-secret; } box-shadow: 0 0 40px rgba(255, 214, 74, 0.7); }
+		}
+
+		@keyframes reveal-pop
+		{
+			0%   { transform: scale(0.7); }
+			60%  { transform: scale(1.08); }
+			100% { transform: scale(1); }
+		}
+
+		.catalog
+		{
+			flex-direction: column;
+			gap: 6px;
+			max-height: 360px;
+			overflow: hidden;
+
+			.knife
+			{
+				flex-direction: column;
+				gap: 2px;
+				padding: 10px 14px;
+				background-color: rgba(255, 255, 255, 0.03);
+				border: 1px solid rgba(255, 255, 255, 0.05);
+				border-left: 4px solid transparent;
+				border-radius: 6px;
+				pointer-events: all;
+				transition: background-color 0.1s;
+
+				.kname { font-size: 15px; font-weight: 600; }
+				.kr    { font-size: 10px; letter-spacing: 2px; color: $text-dim; }
+				.ktag  { font-size: 10px; letter-spacing: 2px; color: $accent; }
+				.ktag.muted { color: $text-dim; }
+
+				&.locked  { opacity: 0.4; .kname { color: $text-dim; } }
+				&.owned   { opacity: 1;   cursor: pointer; }
+				&.owned:hover { background-color: rgba(255, 138, 58, 0.08); }
+				&.equipped { background-color: rgba(255, 138, 58, 0.12); border-color: rgba(255, 138, 58, 0.4); }
+
+				&.rarity-common   { border-left-color: $rar-common; }
+				&.rarity-uncommon { border-left-color: $rar-uncommon; }
+				&.rarity-rare     { border-left-color: $rar-rare; }
+				&.rarity-epic     { border-left-color: $rar-epic; }
+				&.rarity-mythic   { border-left-color: $rar-mythic; }
+				&.rarity-secret   { border-left-color: $rar-secret; }
+			}
+		}
+
+		.footer
+		{
+			flex-direction: column;
+			gap: 10px;
+			padding-top: 8px;
+			border-top: 1px solid $panel-stroke;
+
+			.meta
+			{
+				font-size: 11px;
+				letter-spacing: 1px;
+				color: $text-dim;
+				text-align: center;
+
+				.strong { color: $text-main; font-weight: 700; }
+				.strong.gold { color: $gold; }
+			}
+
+			.open-btn
+			{
+				padding: 14px;
+				text-align: center;
+				font-size: 14px;
+				font-weight: 700;
+				letter-spacing: 3px;
+				border-radius: 8px;
+				pointer-events: all;
+				transition: transform 0.05s, background-color 0.1s;
+
+				&.enabled
+				{
+					color: white;
+					background-color: rgba(255, 138, 58, 0.2);
+					border: 1px solid rgba(255, 138, 58, 0.55);
+					cursor: pointer;
+
+					&:hover  { background-color: rgba(255, 138, 58, 0.35); box-shadow: 0 0 24px $accent-glow; }
+					&:active { transform: scale(0.97); }
+				}
+
+				&.locked
+				{
+					color: rgba(255, 124, 124, 0.6);
+					background-color: rgba(80, 12, 12, 0.3);
+					border: 1px solid rgba(255, 124, 124, 0.25);
+					cursor: not-allowed;
+				}
+			}
+		}
+	}
+}

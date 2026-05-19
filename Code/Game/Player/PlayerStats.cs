@@ -46,6 +46,13 @@ public sealed class PlayerStats : Component
 	[Sync] public int CashOutsCompleted { get; set; }
 	[Sync] public long LifetimeDistance { get; set; }
 
+	// ── Knife inventory (case shop) ──────────────────────────────────────────
+	[Sync] public string OwnedKnivesCsv { get; set; } = "";
+	[Sync] public string EquippedKnifeId { get; set; } = "";
+	[Sync] public int CasesOpened { get; set; }
+	[Sync] public string LastRolledKnifeId { get; set; } = "";
+	[Sync] public long LastRolledTicks { get; set; }
+
 	// ── Persistence ──────────────────────────────────────────────────────────
 	private static readonly IProfileRepository Repo = new LocalProfileRepository();
 
@@ -134,6 +141,9 @@ public sealed class PlayerStats : Component
 				TotalCoinsLifetime = profile.TotalCoinsLifetime;
 				CashOutsCompleted = profile.CashOutsCompleted;
 				LifetimeDistance = profile.LifetimeDistanceTraveled;
+				OwnedKnivesCsv = profile.OwnedKnivesCsv ?? "";
+				EquippedKnifeId = profile.EquippedKnifeId ?? "";
+				CasesOpened = profile.CasesOpened;
 				Log.Info( $"[Runner] Profile loaded — Lvl {Level} · {Xp} XP · {Coins} coins · upg S{Upgrade_Speed}/X{Upgrade_Xp}/C{Upgrade_Coin} · {Rebirths} rebirths · records: HighLvl {HighestLevel}, TotalCoins {TotalCoinsLifetime}, {CashOutsCompleted} cashouts, {LifetimeDistance}u" );
 			}
 			else
@@ -168,6 +178,9 @@ public sealed class PlayerStats : Component
 				TotalCoinsLifetime = TotalCoinsLifetime,
 				CashOutsCompleted = CashOutsCompleted,
 				LifetimeDistanceTraveled = LifetimeDistance,
+				OwnedKnivesCsv = OwnedKnivesCsv,
+				EquippedKnifeId = EquippedKnifeId,
+				CasesOpened = CasesOpened,
 				LastSeenAt = DateTime.UtcNow,
 			};
 			profile.Currencies["coins"] = Coins;
@@ -297,10 +310,14 @@ public sealed class PlayerStats : Component
 		TotalCoinsLifetime = 0;
 		CashOutsCompleted = 0;
 		LifetimeDistance = 0;
+		OwnedKnivesCsv = "";
+		EquippedKnifeId = "";
+		CasesOpened = 0;
+		LastRolledKnifeId = "";
 		_runUnitsAccumulator = 0f;
 		_dirty = true;
 
-		Log.Info( "[Runner] Progress reset (full wipe incl. lifetime records)" );
+		Log.Info( "[Runner] Progress reset (full wipe incl. lifetime records + knives)" );
 
 		if ( _profileLoaded )
 			_ = SaveProfileAsync();
@@ -339,6 +356,69 @@ public sealed class PlayerStats : Component
 			_ = SaveProfileAsync();
 
 		return true;
+	}
+
+	// ── Knife case ────────────────────────────────────────────────────────────
+
+	public bool OwnsKnife( string id )
+	{
+		if ( string.IsNullOrEmpty( id ) || string.IsNullOrEmpty( OwnedKnivesCsv ) )
+			return false;
+		foreach ( var owned in OwnedKnivesCsv.Split( ',' ) )
+			if ( owned == id )
+				return true;
+		return false;
+	}
+
+	public bool CanOpenKnifeCase => Rebirths >= GameConfig.MinRebirthsForKnifeCase && Coins >= GameConfig.KnifeCaseCost;
+
+	/// <summary>Spend 500 coins, roll a knife from the catalog, add to inventory.
+	/// Returns the rolled knife id, or null if the open failed.</summary>
+	public string TryOpenKnifeCase()
+	{
+		if ( IsProxy )
+			return null;
+		if ( Rebirths < GameConfig.MinRebirthsForKnifeCase )
+			return null;
+		if ( Coins < GameConfig.KnifeCaseCost )
+			return null;
+
+		var rolled = KnifeCatalog.Roll();
+		if ( rolled is null )
+			return null;
+
+		Coins -= GameConfig.KnifeCaseCost;
+		CasesOpened += 1;
+
+		// Add to inventory if not already owned (CSV append)
+		if ( !OwnsKnife( rolled.Id ) )
+		{
+			OwnedKnivesCsv = string.IsNullOrEmpty( OwnedKnivesCsv ) ? rolled.Id : OwnedKnivesCsv + "," + rolled.Id;
+			// Auto-equip if nothing equipped yet
+			if ( string.IsNullOrEmpty( EquippedKnifeId ) )
+				EquippedKnifeId = rolled.Id;
+		}
+
+		LastRolledKnifeId = rolled.Id;
+		LastRolledTicks = DateTime.UtcNow.Ticks;
+		_dirty = true;
+		EventBus.Publish( new PlayerCurrencyChanged( SteamId(), "coins", -GameConfig.KnifeCaseCost, Coins ) );
+		Log.Info( $"[Case] Opened — got {rolled.Name} ({rolled.Rarity}) · -{GameConfig.KnifeCaseCost} coins (now {Coins})" );
+
+		if ( _profileLoaded )
+			_ = SaveProfileAsync();
+
+		return rolled.Id;
+	}
+
+	public void EquipKnife( string id )
+	{
+		if ( IsProxy ) return;
+		if ( !OwnsKnife( id ) ) return;
+		EquippedKnifeId = id;
+		_dirty = true;
+		if ( _profileLoaded )
+			_ = SaveProfileAsync();
 	}
 
 	// ── Rebirth ──────────────────────────────────────────────────────────────

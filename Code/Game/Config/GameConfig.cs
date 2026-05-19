@@ -32,4 +32,8 @@ public static class GameConfig
 
 	/// <summary>Each completed rebirth grants this much extra to Speed / XP / Coin gains.</summary>
 	public const float RebirthBonusPerCount = 0.50f;
+
+	// ── Knife case ────────────────────────────────────────────────────────────
+	public const long KnifeCaseCost = 500;
+	public const int MinRebirthsForKnifeCase = 1;
 }
