@@ -68,11 +68,13 @@ public sealed class FpsViewmodel : Component
 	/// <summary>
 	/// Per-knife pose tuning in the hand bone's local space. Defaults are tuned
 	/// for the katana (the model that actually loads on this install) — handle
-	/// in the palm, blade extending forward along the wrist→fingers axis.
+	/// in the palm, blade extending forward along the wrist→fingers axis, and
+	/// the scale shrunk to viewmodel size (the native katana is ~80u long, we
+	/// want it ~10u so it reads as "knife held in hand", not "broomstick").
 	/// </summary>
-	[Property] public Vector3 KnifeLocalOffset   { get; set; } = new Vector3( 0, 3, 0 );
+	[Property] public Vector3 KnifeLocalOffset   { get; set; } = new Vector3( 2, 4, 1 );
 	[Property] public Angles  KnifeLocalRotation { get; set; } = new Angles( 0, -90, 0 );
-	[Property] public float   KnifeUniformScale  { get; set; } = 0.5f;
+	[Property] public float   KnifeUniformScale  { get; set; } = 0.12f;
 
 	[Property] public SoundEvent InspectSound { get; set; }
 
