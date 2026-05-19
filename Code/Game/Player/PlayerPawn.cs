@@ -26,11 +26,28 @@ public sealed class PlayerPawn : Component
 	/// <summary>Run speed in units / second (pre-multipliers).</summary>
 	[Property] public float RunSpeed { get; set; } = GameConfig.BaseRunSpeed;
 
-	/// <summary>Jump impulse magnitude.</summary>
-	[Property] public float JumpStrength { get; set; } = 322f;
+	/// <summary>Jump impulse magnitude (Source/CS2 default ≈ 268.3).</summary>
+	[Property] public float JumpStrength { get; set; } = 268.3f;
 
 	/// <summary>Falling below this world Z respawns the player instantly.</summary>
 	[Property] public float DeathZ { get; set; } = -200f;
+
+	// ── CS2 / Source-style movement tunables ─────────────────────────────────
+
+	/// <summary>sv_accelerate equivalent. Higher = snappier ground response. CS2 ≈ 5.5.</summary>
+	[Property, Range( 1f, 20f )] public float GroundAccelRate { get; set; } = 5.5f;
+
+	/// <summary>sv_friction equivalent. Higher = sharper stops. CS2 ≈ 5.2.</summary>
+	[Property, Range( 1f, 20f )] public float GroundFriction { get; set; } = 5f;
+
+	/// <summary>sv_airaccelerate equivalent. CS2 ≈ 12.</summary>
+	[Property, Range( 1f, 100f )] public float AirAccelRate { get; set; } = 12f;
+
+	/// <summary>Max wish-speed cap while airborne. Letting it stay low enables bhop / air-strafe gains. CS2 ≈ 30.</summary>
+	[Property] public float MaxAirWishSpeed { get; set; } = 30f;
+
+	/// <summary>sv_stopspeed equivalent. Below this speed friction uses this value as the multiplier baseline — gives the snappy counter-strafe stop.</summary>
+	[Property] public float StopSpeed { get; set; } = 100f;
 
 	public Vector3 WishVelocity { get; private set; }
 
@@ -109,6 +126,9 @@ public sealed class PlayerPawn : Component
 
 		BuildWishVelocity();
 
+		var wishDir = WishVelocity.IsNearZeroLength ? Vector3.Zero : WishVelocity.Normal;
+		float wishSpeed = WishVelocity.Length;
+
 		if ( cc.IsOnGround && Input.Pressed( "Jump" ) )
 		{
 			cc.Punch( Vector3.Up * JumpStrength );
@@ -117,14 +137,13 @@ public sealed class PlayerPawn : Component
 		if ( cc.IsOnGround )
 		{
 			cc.Velocity = cc.Velocity.WithZ( 0 );
-			cc.Accelerate( WishVelocity );
-			cc.ApplyFriction( 4.0f );
+			ApplyFrictionSource( cc, GroundFriction );
+			AccelerateSource( cc, wishDir, wishSpeed, GroundAccelRate );
 		}
 		else
 		{
 			cc.Velocity -= Gravity * Time.Delta * 0.5f;
-			cc.Accelerate( WishVelocity.ClampLength( 50 ) );
-			cc.ApplyFriction( 0.1f );
+			AirAccelerateSource( cc, wishDir, wishSpeed, AirAccelRate );
 		}
 
 		cc.Move();
@@ -136,6 +155,65 @@ public sealed class PlayerPawn : Component
 
 		ClampToAntiCheatCeiling( cc );
 		GrantRunXp( cc );
+	}
+
+	// ── Source / CS2-style movement primitives ────────────────────────────────
+	// Reference: https://developer.valvesoftware.com/wiki/CS_air_acceleration
+	// These give snappy ground response + counter-strafe + air-strafe / bhop feel.
+
+	private void ApplyFrictionSource( CharacterController cc, float friction )
+	{
+		var horizontal = cc.Velocity.WithZ( 0 );
+		float speed = horizontal.Length;
+		if ( speed < 0.1f )
+			return;
+
+		// Below stop_speed, friction uses stop_speed as the baseline → harder stop.
+		float control = speed < StopSpeed ? StopSpeed : speed;
+		float drop = control * friction * Time.Delta;
+		float newSpeed = MathF.Max( 0f, speed - drop );
+
+		if ( !MathF.Abs( newSpeed - speed ).AlmostEqual( 0f, 0.001f ) )
+		{
+			float scale = newSpeed / speed;
+			cc.Velocity = new Vector3( horizontal.x * scale, horizontal.y * scale, cc.Velocity.z );
+		}
+	}
+
+	private void AccelerateSource( CharacterController cc, Vector3 wishDir, float wishSpeed, float accel )
+	{
+		if ( wishSpeed <= 0f )
+			return;
+
+		float currentSpeed = cc.Velocity.WithZ( 0 ).Dot( wishDir );
+		float addSpeed = wishSpeed - currentSpeed;
+		if ( addSpeed <= 0f )
+			return;
+
+		float accelSpeed = accel * Time.Delta * wishSpeed;
+		if ( accelSpeed > addSpeed )
+			accelSpeed = addSpeed;
+
+		cc.Velocity += wishDir * accelSpeed;
+	}
+
+	private void AirAccelerateSource( CharacterController cc, Vector3 wishDir, float wishSpeed, float accel )
+	{
+		if ( wishSpeed <= 0f )
+			return;
+
+		// Cap the target velocity along wishDir, but use full wishSpeed for the accel rate (bhop).
+		float wishSpd = MathF.Min( wishSpeed, MaxAirWishSpeed );
+		float currentSpeed = cc.Velocity.WithZ( 0 ).Dot( wishDir );
+		float addSpeed = wishSpd - currentSpeed;
+		if ( addSpeed <= 0f )
+			return;
+
+		float accelSpeed = accel * Time.Delta * wishSpeed;
+		if ( accelSpeed > addSpeed )
+			accelSpeed = addSpeed;
+
+		cc.Velocity += wishDir * accelSpeed;
 	}
 
 	/// <summary>Convert distance covered while running on the ground into XP.</summary>
