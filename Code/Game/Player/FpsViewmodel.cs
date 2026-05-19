@@ -96,6 +96,7 @@ public sealed class FpsViewmodel : Component
 	// ─── Lifecycle ────────────────────────────────────────────────────────
 
 	private bool _firstPreRenderLogged;
+	private bool _dumpBonesPending;
 
 	protected override void OnEnabled()
 	{
@@ -132,6 +133,11 @@ public sealed class FpsViewmodel : Component
 		{
 			Log.Info( $"[FpsViewmodel] Arms model loaded: {model.ResourcePath} (BoneCount={model.BoneCount})" );
 		}
+
+		// One-shot bone dump so we can pick the right HandBoneName if our defaults
+		// don't match. Bones are enumerated lazily via GetBoneObject — we'll do
+		// this in OnPreRender once the renderer has created them.
+		_dumpBonesPending = model.BoneCount > 0;
 
 		_viewmodel = new GameObject( true, "FpsViewmodel" );
 		_viewmodel.Tags.Add( "viewmodel" );
@@ -275,6 +281,21 @@ public sealed class FpsViewmodel : Component
 			Log.Info( $"[FpsViewmodel] First OnPreRender — viewmodel active, camera at {_camera.WorldPosition}, knife equipped={knife?.Id ?? "none"}" );
 		}
 
+		// One-shot bone dump so we can see exactly what the arms rig exposes
+		// and pick the right grip bone if our default 'hold_R' isn't there.
+		if ( _dumpBonesPending && _arms.IsValid() && _arms.Model is not null && _arms.Model.BoneCount > 0 )
+		{
+			_dumpBonesPending = false;
+			var names = new System.Collections.Generic.List<string>();
+			int n = _arms.Model.BoneCount;
+			for ( int i = 0; i < n; i++ )
+			{
+				var o = _arms.GetBoneObject( i );
+				if ( o.IsValid() ) names.Add( $"{i}:{o.Name}" );
+			}
+			Log.Info( $"[FpsViewmodel] Arms rig bones ({n}): {string.Join( ", ", names )}" );
+		}
+
 		// Anchor to camera with the configured local tweak.
 		_viewmodel.WorldPosition = _camera.WorldPosition;
 		_viewmodel.WorldRotation = _camera.WorldRotation * ViewModelRotation.ToRotation();
@@ -354,8 +375,14 @@ public sealed class FpsViewmodel : Component
 		ApplyShape( knife.Id, _knifeBlade, _knifeHandle );
 	}
 
+	private GameObject _resolvedHandBone;
+	private string _resolvedHandBoneName;
+
 	private GameObject ResolveHandBone()
 	{
+		if ( _resolvedHandBone.IsValid() )
+			return _resolvedHandBone;
+
 		if ( !_arms.IsValid() || _arms.Model is null ) return null;
 
 		string[] candidates = { HandBoneName, "hold_R", "hand_R", "weapon_bone" };
@@ -368,7 +395,12 @@ public sealed class FpsViewmodel : Component
 			foreach ( var c in candidates )
 			{
 				if ( !string.IsNullOrEmpty( c ) && o.Name == c )
+				{
+					_resolvedHandBone = o;
+					_resolvedHandBoneName = c;
+					Log.Info( $"[FpsViewmodel] Resolved hand bone '{c}' at index {i}" );
 					return o;
+				}
 			}
 		}
 
