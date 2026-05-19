@@ -29,22 +29,37 @@ public sealed class FootstepSystem : Component
 	[Property] public SoundEvent FallbackStepSound { get; set; }
 
 	// ─── Per-level / per-surface step sounds ──────────────────────────────
-	// Tag the platform GameObjects with one of these surface tags and the
-	// matching SoundEvent below wins over the engine's surface SoundCollection.
+	// Tag the platform GameObjects with one of these surface tags. We look at
+	// the hit GameObject (or any ancestor up 8 levels) and the first matching
+	// tag wins. Untagged platforms fall through to the engine's surface
+	// SoundCollection, then to FallbackStepSound.
 	//
-	//   "surface_concrete"  → Level 1 (hub + level 1 plats)
-	//   "surface_wood"      → Level 2
-	//   "surface_metal"     → Level 3
-	//   "surface_glass"     → Level 4 (moving plats / future mechanics)
+	//   "surface_grass"     → Hub + Level 1
+	//   "surface_sand"      → Level 2
+	//   "surface_concrete"  → reserved
+	//   "surface_wood"      → reserved
+	//   "surface_metal"     → reserved
+	//   "surface_glass"     → reserved
 	//
-	// Untagged platforms fall back to the engine's surface sound, then to
-	// FallbackStepSound. So you can tag incrementally — anything you haven't
-	// touched keeps the original step sound.
+	// Each property below has a hardcoded fallback path so the sound plays
+	// out of the box; assign a SoundEvent in Inspector to override.
 
+	[Property, Group( "Level Step Sounds" )] public SoundEvent GrassStepSound { get; set; }
+	[Property, Group( "Level Step Sounds" )] public SoundEvent SandStepSound { get; set; }
 	[Property, Group( "Level Step Sounds" )] public SoundEvent ConcreteStepSound { get; set; }
 	[Property, Group( "Level Step Sounds" )] public SoundEvent WoodStepSound { get; set; }
 	[Property, Group( "Level Step Sounds" )] public SoundEvent MetalStepSound { get; set; }
 	[Property, Group( "Level Step Sounds" )] public SoundEvent GlassStepSound { get; set; }
+
+	// Hardcoded fallback paths — S&box ships these in the surfaces/sounds tree.
+	// "Sand" uses wood as a substitute since no sand footsteps asset exists in
+	// the base install; swap if you install a sand pack later.
+	private const string GrassPath    = "surfaces/sounds/grass/grass_footsteps.sound";
+	private const string SandPath     = "surfaces/sounds/wood/wood_footsteps.sound";
+	private const string ConcretePath = "surfaces/sounds/footsteps_concrete.sound";
+	private const string WoodPath     = "surfaces/sounds/wood/wood_footsteps.sound";
+	private const string MetalPath    = "surfaces/sounds/metallic/metal_footsteps.sound";
+	private const string GlassPath    = "surfaces/sounds/glass/glass_sheet_footsteps.sound";
 
 	private TimeSince _timeSinceStep;
 	private bool _useLeftFoot;
@@ -134,8 +149,8 @@ public sealed class FootstepSystem : Component
 
 	/// <summary>
 	/// Walk up the GameObject's ancestor chain looking for a "surface_*" tag.
-	/// Lets you tag either an individual platform or a whole level container
-	/// and get the right step sound either way.
+	/// Returns the matching SoundEvent (Inspector-assigned or hardcoded
+	/// fallback path) for the first tag found.
 	/// </summary>
 	private SoundEvent ResolveSurfaceSoundByTag( GameObject go )
 	{
@@ -143,10 +158,12 @@ public sealed class FootstepSystem : Component
 		int depth = 0;
 		while ( current.IsValid() && depth < 8 )
 		{
-			if ( current.Tags.Has( "surface_concrete" ) ) return ConcreteStepSound;
-			if ( current.Tags.Has( "surface_wood" ) )     return WoodStepSound;
-			if ( current.Tags.Has( "surface_metal" ) )    return MetalStepSound;
-			if ( current.Tags.Has( "surface_glass" ) )    return GlassStepSound;
+			if ( current.Tags.Has( "surface_grass" ) )    return GrassStepSound    ?? ResourceLibrary.Get<SoundEvent>( GrassPath );
+			if ( current.Tags.Has( "surface_sand" ) )     return SandStepSound     ?? ResourceLibrary.Get<SoundEvent>( SandPath );
+			if ( current.Tags.Has( "surface_concrete" ) ) return ConcreteStepSound ?? ResourceLibrary.Get<SoundEvent>( ConcretePath );
+			if ( current.Tags.Has( "surface_wood" ) )     return WoodStepSound     ?? ResourceLibrary.Get<SoundEvent>( WoodPath );
+			if ( current.Tags.Has( "surface_metal" ) )    return MetalStepSound    ?? ResourceLibrary.Get<SoundEvent>( MetalPath );
+			if ( current.Tags.Has( "surface_glass" ) )    return GlassStepSound    ?? ResourceLibrary.Get<SoundEvent>( GlassPath );
 
 			current = current.Parent;
 			depth++;
