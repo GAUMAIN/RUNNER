@@ -100,6 +100,10 @@ public sealed class PlayerPawn : Component
 			HandleLookInput();
 			DriveCamera();
 			IsSprinting = Input.Down( "Run" );
+
+			// Toggle 1st / 3rd person with the View key (C by default).
+			if ( !Mouse.Visible && Input.Pressed( "View" ) )
+				FirstPerson = !FirstPerson;
 		}
 
 		RotateBodyToVelocity();
