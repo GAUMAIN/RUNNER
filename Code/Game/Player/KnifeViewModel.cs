@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Sandbox;
 using Runner.Economy;
@@ -39,6 +40,13 @@ public sealed class KnifeViewModel : Component
 
 	/// <summary>Name of the right-hand grip bone on the Citizen rig.</summary>
 	[Property] public string HoldBoneName { get; set; } = "hold_R";
+
+	// ─── Inspect animation ────────────────────────────────────────────────
+	[Property] public SoundEvent InspectSound { get; set; }
+	[Property] public float InspectDuration { get; set; } = 1.2f;
+
+	private TimeSince _timeSinceInspect = 999f;
+	private bool IsInspecting => _timeSinceInspect < InspectDuration;
 
 	// FPS hierarchy (camera-anchored)
 	private GameObject _root;
@@ -155,6 +163,17 @@ public sealed class KnifeViewModel : Component
 			return;
 		}
 
+		// Inspect trigger — only meaningful in FPS, and skipped when paused so we
+		// don't fire it while the user is dragging sliders in the pause menu.
+		if ( pawn.FirstPerson
+			&& !Runner.Config.UserSettings.IsPaused
+			&& !IsInspecting
+			&& Input.Pressed( "Inspect" ) )
+		{
+			_timeSinceInspect = 0f;
+			PlayInspectSound();
+		}
+
 		EnsureFpsMeshes();
 
 		// Resolve camera lazily for FPS branch.
@@ -179,15 +198,28 @@ public sealed class KnifeViewModel : Component
 			_bladeRenderer.Tint = bladeTint;
 			ApplyShape( knife.Id, _blade, _handle );
 
+			// Inspect anim: bell-shaped position pull-in + smooth full spin around the
+			// camera-forward axis. t goes 0→1 over InspectDuration; ramp peaks at 0.5
+			// (knife closest to camera, raised, centered).
+			float t = IsInspecting ? Math.Clamp( (float)_timeSinceInspect / InspectDuration, 0f, 1f ) : 0f;
+			float ramp = MathF.Sin( t * MathF.PI );      // 0 → 1 → 0
+			float spin = t * 360f;                        // one full revolution
+
+			float fwd   = ForwardOffset - ramp * 4f;     // pull closer to the face
+			float right = RightOffset   - ramp * 8f;     // slide toward center
+			float down  = DownOffset    - ramp * 5f;     // raise up
+
 			var camRot = _camera.WorldRotation;
 			var camPos = _camera.WorldPosition;
 			var worldOffset =
-				  camRot.Forward * ForwardOffset
-				+ camRot.Right   * RightOffset
-				+ camRot.Up      * -DownOffset;
+				  camRot.Forward * fwd
+				+ camRot.Right   * right
+				+ camRot.Up      * -down;
 
 			_root.WorldPosition = camPos + worldOffset;
-			_root.WorldRotation = camRot * Rotation.From( PitchTweak, YawTweak, RollTweak );
+			_root.WorldRotation = camRot
+				* Rotation.From( PitchTweak, YawTweak, RollTweak )
+				* Rotation.From( 0f, 0f, spin );        // roll around forward
 			_root.WorldScale = Vector3.One;
 		}
 		else
@@ -290,6 +322,18 @@ public sealed class KnifeViewModel : Component
 	{
 		if ( _root.IsValid() ) _root.Enabled = false;
 		if ( _tpsRoot.IsValid() ) _tpsRoot.Enabled = false;
+	}
+
+	// Inspect uses a Kenney UI tick as a placeholder until a real knife sound is wired.
+	private const string InspectFallbackSound = "sounds/kenney/ui/ui.button.press.sound";
+
+	private void PlayInspectSound()
+	{
+		var handle = InspectSound is not null
+			? Sound.Play( InspectSound )
+			: Sound.Play( InspectFallbackSound );
+		if ( handle is not null )
+			handle.Volume *= Runner.Config.UserSettings.Volume;
 	}
 
 	// ─── Per-knife shape ──────────────────────────────────────────────────
