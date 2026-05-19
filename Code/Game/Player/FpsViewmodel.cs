@@ -64,6 +64,18 @@ public sealed class FpsViewmodel : Component
 
 	[Property] public SoundEvent InspectSound { get; set; }
 
+	/// <summary>
+	/// Debug toggle. When true the viewmodel uses the proper Overlay render path
+	/// (drawn on top, never clipped). When false the arms render in the normal
+	/// game pass so they're visible "in world" — useful to confirm the model
+	/// loaded and is positioned correctly without trusting the overlay system.
+	///
+	/// Defaulted to FALSE for now: lets us first verify the arms actually load
+	/// and anchor to the camera. Once that's confirmed, flip this on for the
+	/// proper CS-style overlay pass.
+	/// </summary>
+	[Property] public bool UseOverlayRender { get; set; } = false;
+
 	// ─── Internal state ───────────────────────────────────────────────────
 
 	private GameObject _viewmodel;
@@ -83,9 +95,12 @@ public sealed class FpsViewmodel : Component
 
 	// ─── Lifecycle ────────────────────────────────────────────────────────
 
+	private bool _firstPreRenderLogged;
+
 	protected override void OnEnabled()
 	{
 		base.OnEnabled();
+		Log.Info( $"[FpsViewmodel] OnEnabled (IsProxy={IsProxy})" );
 		BuildViewmodel();
 	}
 
@@ -99,12 +114,23 @@ public sealed class FpsViewmodel : Component
 	{
 		if ( _viewmodel.IsValid() ) return;
 
+		Log.Info( "[FpsViewmodel] BuildViewmodel start" );
+
 		// Lazy-load defaults so the component just works after AddComponent.
 		var model = ArmsModel ?? Model.Load( DefaultArmsModelPath );
 		if ( model is null )
 		{
-			Log.Warning( $"[FpsViewmodel] Could not load arms model '{DefaultArmsModelPath}' — viewmodel disabled." );
-			return;
+			Log.Warning( $"[FpsViewmodel] Could not load arms model '{DefaultArmsModelPath}' — viewmodel disabled. Falling back to dev box so something visible renders." );
+			model = Model.Load( "models/dev/box.vmdl" );
+			if ( model is null )
+			{
+				Log.Error( "[FpsViewmodel] Even box.vmdl failed to load — bailing." );
+				return;
+			}
+		}
+		else
+		{
+			Log.Info( $"[FpsViewmodel] Arms model loaded: {model.ResourcePath} (BoneCount={model.BoneCount})" );
 		}
 
 		_viewmodel = new GameObject( true, "FpsViewmodel" );
@@ -114,8 +140,11 @@ public sealed class FpsViewmodel : Component
 		_arms = _viewmodel.Components.Create<SkinnedModelRenderer>();
 		_arms.Model = model;
 		_arms.CreateBoneObjects = true;
-		_arms.RenderOptions.Overlay = true;     // draws on top — no world clipping
-		_arms.RenderOptions.Game = false;        // skip the game render pass
+		// NOTE: Overlay flags are gated behind a debug Property so we can A/B test
+		// the viewmodel render path — if the user sees nothing, flipping these
+		// off in inspector reveals whether it's a render-pass problem.
+		_arms.RenderOptions.Overlay = UseOverlayRender;
+		_arms.RenderOptions.Game = !UseOverlayRender;
 		_arms.RenderType = ModelRenderer.ShadowRenderType.Off;
 
 		// Try the assigned animgraph first; fall back to the punching graph the
@@ -124,7 +153,14 @@ public sealed class FpsViewmodel : Component
 		var graph = ArmsAnimationGraph
 			?? ResourceLibrary.Get<AnimationGraph>( DefaultArmsGraphPath );
 		if ( graph is not null )
+		{
 			_arms.AnimationGraph = graph;
+			Log.Info( $"[FpsViewmodel] AnimationGraph set: {graph.ResourcePath}" );
+		}
+		else
+		{
+			Log.Info( "[FpsViewmodel] No animgraph — model's baked default will play (idle)." );
+		}
 
 		// Knife — non-animated cube primitives, world transform driven from the
 		// arms' hand bone every frame in OnPreRender.
@@ -232,6 +268,12 @@ public sealed class FpsViewmodel : Component
 			: null;
 
 		SetActive( true );
+
+		if ( !_firstPreRenderLogged )
+		{
+			_firstPreRenderLogged = true;
+			Log.Info( $"[FpsViewmodel] First OnPreRender — viewmodel active, camera at {_camera.WorldPosition}, knife equipped={knife?.Id ?? "none"}" );
+		}
 
 		// Anchor to camera with the configured local tweak.
 		_viewmodel.WorldPosition = _camera.WorldPosition;
