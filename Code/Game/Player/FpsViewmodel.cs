@@ -86,11 +86,13 @@ public sealed class FpsViewmodel : Component
 	private GameObject _viewmodel;
 	private SkinnedModelRenderer _arms;
 
-	// Real .vmdl knife rendered on the arms' hand bone. We track the currently
-	// loaded knife id so we only swap the Model when the catalog selection
-	// actually changes.
+	// Knife is a plain prop attached to the hand — ModelRenderer (NOT skinned)
+	// because the knife mesh doesn't need its own animgraph; the whole prop
+	// moves with the arms' weapon_root bone every frame. ModelRenderer is also
+	// more forgiving on models without rigs, which is critical for our
+	// fallback path (box.vmdl) to render at all.
 	private GameObject _knifeRoot;
-	private SkinnedModelRenderer _knifeRenderer;
+	private ModelRenderer _knifeRenderer;
 	private string _knifeLoadedId;
 
 	private CameraComponent _camera;
@@ -176,12 +178,11 @@ public sealed class FpsViewmodel : Component
 			Log.Info( "[FpsViewmodel] No animgraph — model's baked default will play (idle)." );
 		}
 
-		// Knife — single SkinnedModelRenderer holding a REAL knife .vmdl. World
-		// transform is driven from the arms' hand bone every frame in OnPreRender.
-		// The actual Model is loaded lazily in UpdateKnife() so we don't pay for
-		// the load until the player actually has a knife equipped.
+		// Knife — plain ModelRenderer (not skinned) glued to the arms' weapon_root
+		// bone every frame in OnPreRender. The actual Model is loaded lazily in
+		// UpdateKnife() so we only pay for it once a knife is equipped.
 		_knifeRoot = new GameObject( true, "Knife" );
-		_knifeRenderer = _knifeRoot.Components.Create<SkinnedModelRenderer>();
+		_knifeRenderer = _knifeRoot.Components.Create<ModelRenderer>();
 		_knifeRenderer.RenderOptions.Overlay = UseOverlayRender;
 		_knifeRenderer.RenderOptions.Game = !UseOverlayRender;
 		_knifeRenderer.RenderType = ModelRenderer.ShadowRenderType.Off;
@@ -353,24 +354,25 @@ public sealed class FpsViewmodel : Component
 	}
 
 	/// <summary>
-	/// Candidate .vmdl paths to try for a given knife id, in priority order.
-	/// We try each one until <see cref="Model.Load"/> returns a model with
-	/// BoneCount &gt; 0. Different paths may or may not be mounted depending on
-	/// which Facepunch / community packages the local S&amp;box install has
-	/// actually downloaded vs. just listed in the registry.
+	/// Candidate .vmdl paths to try for a given knife id, in priority order. We
+	/// try each one until <see cref="Model.Load"/> returns a non-null model.
+	/// Paths beyond the first are only reachable if their owning package is
+	/// mounted in the user's local S&amp;box install — paths to community
+	/// knives may be no-ops on a fresh install.
 	///
-	/// Last entry in every list is <c>katana/katana.vmdl</c> — empirically the
-	/// most reliably-mounted blade asset, so we always have SOMETHING to show.
+	/// Last entry in EVERY list is <c>models/dev/box.vmdl</c>, which is shipped
+	/// with the engine and always loads. That guarantees the player at least
+	/// sees something at the hand position instead of an empty grip.
 	/// </summary>
 	private static string[] ModelPathsFor( string knifeId ) => knifeId switch
 	{
-		"katana"           => new[] { "katana/katana.vmdl" },
-		"butterfly"        => new[] { "models/butterflyknife/butterfly_knife.vmdl", "models/knife/knife.vmdl", "katana/katana.vmdl" },
-		"bayonet"          => new[] { "models/weapons/v_m9_bayonet_knife.vmdl",       "models/knife/knife.vmdl", "katana/katana.vmdl" },
-		"karambit"         => new[] { "models/weapons/daggers/dagger_02.vmdl",        "models/knife/knife.vmdl", "katana/katana.vmdl" },
-		"cursed_karambit"  => new[] { "models/weapons/daggers/dagger_01.vmdl",        "models/knife/knife.vmdl", "katana/katana.vmdl" },
-		"skull"            => new[] { "models/knife/knife.vmdl",                       "katana/katana.vmdl" },
-		_                  => new[] { "models/knife/knife.vmdl",                       "katana/katana.vmdl" },
+		"katana"           => new[] { "katana/katana.vmdl",                            "models/knife/knife.vmdl",                          "models/dev/box.vmdl" },
+		"butterfly"        => new[] { "models/butterflyknife/butterfly_knife.vmdl",    "models/knife/knife.vmdl",   "katana/katana.vmdl",  "models/dev/box.vmdl" },
+		"bayonet"          => new[] { "models/weapons/v_m9_bayonet_knife.vmdl",        "models/knife/knife.vmdl",   "katana/katana.vmdl",  "models/dev/box.vmdl" },
+		"karambit"         => new[] { "models/weapons/daggers/dagger_02.vmdl",         "models/knife/knife.vmdl",   "katana/katana.vmdl",  "models/dev/box.vmdl" },
+		"cursed_karambit"  => new[] { "models/weapons/daggers/dagger_01.vmdl",         "models/knife/knife.vmdl",   "katana/katana.vmdl",  "models/dev/box.vmdl" },
+		"skull"            => new[] { "models/knife/knife.vmdl",                       "katana/katana.vmdl",                               "models/dev/box.vmdl" },
+		_                  => new[] { "models/knife/knife.vmdl",                       "katana/katana.vmdl",                               "models/dev/box.vmdl" },
 	};
 
 	/// <summary>Place the knife at the arms' hand bone with the configured local offset.</summary>
@@ -394,10 +396,10 @@ public sealed class FpsViewmodel : Component
 		}
 
 		// Swap the knife model only when the equipped knife changes — Model.Load
-		// isn't cheap and we don't want to thrash it every frame. We try each
-		// candidate path in order until one resolves to a non-empty model. Many
-		// "downloaded" Facepunch packages are only registered (thumbnail-only)
-		// and don't actually mount — so we always have a katana fallback last.
+		// isn't cheap and we don't want to thrash it every frame. We walk the
+		// candidate paths and pick the first that returns a non-error model.
+		// box.vmdl is always last and is shipped with the engine, so we always
+		// have SOMETHING to render even if community packages are missing.
 		if ( _knifeLoadedId != knife.Id )
 		{
 			Model resolved = null;
@@ -406,15 +408,14 @@ public sealed class FpsViewmodel : Component
 			foreach ( var path in ModelPathsFor( knife.Id ) )
 			{
 				var m = Model.Load( path );
-				// A package that registered but didn't fully download returns a
-				// placeholder with BoneCount==0 instead of failing — treat that as
-				// a miss too.
-				if ( m is not null && m.BoneCount > 0 )
-				{
-					resolved = m;
-					resolvedPath = path;
-					break;
-				}
+				// Treat missing-or-stub (Error or Bounds.Size == 0) as a miss.
+				// A loaded model has non-zero bounds even if it's unrigged.
+				if ( m is null ) continue;
+				if ( m.Bounds.Size.IsNearlyZero() ) continue;
+
+				resolved = m;
+				resolvedPath = path;
+				break;
 			}
 
 			if ( resolved is null )
@@ -426,7 +427,7 @@ public sealed class FpsViewmodel : Component
 
 			_knifeRenderer.Model = resolved;
 			_knifeLoadedId = knife.Id;
-			Log.Info( $"[FpsViewmodel] Loaded knife model '{resolvedPath}' for '{knife.Id}' (BoneCount={resolved.BoneCount})" );
+			Log.Info( $"[FpsViewmodel] Loaded knife model '{resolvedPath}' for '{knife.Id}'" );
 		}
 
 		_knifeRoot.Enabled = true;
@@ -487,19 +488,14 @@ public sealed class FpsViewmodel : Component
 
 	private void TriggerInspect()
 	{
-		// Fire on BOTH the arms and the knife — whichever rig has the matching
-		// animgraph param will play. Different vmdl ship with different
-		// trigger names, so we splat the common ones.
-		string[] triggers = { "b_deploy", "b_inspect", "b_attack_inspect", "b_holster" };
+		// Fire common inspect-style triggers on the arms animgraph. The knife
+		// itself is a plain (unrigged) prop now, so it doesn't have an
+		// animgraph to drive.
 		if ( _arms.IsValid() )
 		{
-			foreach ( var p in triggers )
-				_arms.Set( p, true );
-		}
-		if ( _knifeRenderer.IsValid() )
-		{
-			foreach ( var p in triggers )
-				_knifeRenderer.Set( p, true );
+			_arms.Set( "b_deploy", true );
+			_arms.Set( "b_inspect", true );
+			_arms.Set( "b_attack_inspect", true );
 		}
 
 		var handle = InspectSound is not null
