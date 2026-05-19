@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Sandbox;
+using Runner.Config;
 using Runner.Player;
 
 namespace Runner.VFX;
@@ -50,7 +51,10 @@ public sealed class CameraSpeedFx : Component
 		float speed = cc.Velocity.WithZ( 0 ).Length;
 		float span = MathF.Max( 1f, SpeedAtMax - SpeedAtBase );
 		float t = ((speed - SpeedAtBase) / span).Clamp( 0f, 1f );
-		float targetFov = MathX.Lerp( BaseFov, MaxFov, t );
+		// Use the user-tunable base FOV as the floor of the lerp.
+		float baseFov = UserSettings.BaseFov;
+		float maxFov = baseFov + (MaxFov - BaseFov); // preserve the speed-add delta
+		float targetFov = MathX.Lerp( baseFov, maxFov, t );
 
 		_currentFov = MathX.Lerp( _currentFov, targetFov, Time.Delta * Damping );
 		_camera.FieldOfView = _currentFov;

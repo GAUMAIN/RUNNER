@@ -1,6 +1,7 @@
 using Sandbox;
 using System.Linq;
 using Runner.Config;
+using Runner.UI;
 
 namespace Runner.Player;
 
@@ -92,6 +93,10 @@ public sealed class PlayerPawn : Component
 		if ( IsProxy )
 			return;
 
+		// Pause menu open → freeze movement input (don't accumulate velocity).
+		if ( global::PausePanel.IsOpen )
+			return;
+
 		// Fell into the void — respawn instantly, skip movement this tick.
 		if ( _spawnCaptured && WorldPosition.z < DeathZ )
 		{
@@ -170,13 +175,13 @@ public sealed class PlayerPawn : Component
 
 	private void HandleLookInput()
 	{
-		// When a modal UI (Shop, Rebirth, etc.) frees the cursor, skip the look
+		// When a modal UI (Shop, Rebirth, Pause, etc.) frees the cursor, skip the look
 		// update so the camera doesn't spin while the user is clicking.
 		if ( Mouse.Visible )
 			return;
 
 		var ee = EyeAngles;
-		ee += Input.AnalogLook * 0.5f;
+		ee += Input.AnalogLook * UserSettings.MouseSensitivity;
 		ee.pitch = ee.pitch.Clamp( -89f, 89f );
 		ee.roll = 0;
 		EyeAngles = ee;

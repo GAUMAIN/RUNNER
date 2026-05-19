@@ -96,12 +96,9 @@
 
 	private static void PlaySafe( SoundEvent assigned, string fallback )
 	{
-		if ( assigned is not null )
-		{
-			Sound.Play( assigned );
-			return;
-		}
-		Sound.Play( fallback );
+		var handle = assigned is not null ? Sound.Play( assigned ) : Sound.Play( fallback );
+		if ( handle is not null )
+			handle.Volume *= Runner.Config.UserSettings.Volume;
 	}
 
 	private void OnLevelUp( PlayerLeveledUp evt )

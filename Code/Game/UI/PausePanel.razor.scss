@@ -1,0 +1,119 @@
+$accent: #f8c673;
+$accent-glow: rgba(248, 198, 115, 0.55);
+$panel-bg: rgba(10, 8, 4, 0.94);
+$panel-stroke: rgba(255, 255, 255, 0.08);
+$text-main: #fff4dc;
+$text-dim: rgba(255, 244, 220, 0.55);
+$red: #ff5c5c;
+
+PausePanel
+{
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	pointer-events: none;
+	font-family: Poppins;
+	color: $text-main;
+	justify-content: center;
+	align-items: center;
+	background-color: rgba(0, 0, 0, 0.55);
+
+	.pause
+	{
+		flex-direction: column;
+		width: 460px;
+		padding: 32px 30px;
+		background-color: $panel-bg;
+		border: 1px solid $panel-stroke;
+		border-radius: 14px;
+		backdrop-filter: blur( 24px );
+		box-shadow: 0 0 60px rgba(248, 198, 115, 0.18);
+		align-items: stretch;
+		gap: 12px;
+
+		.title
+		{
+			font-size: 28px;
+			font-weight: 800;
+			letter-spacing: 10px;
+			color: $accent;
+			text-shadow: 0 0 14px $accent-glow;
+			text-align: center;
+			padding-bottom: 18px;
+			margin-bottom: 8px;
+			border-bottom: 1px solid $panel-stroke;
+		}
+
+		.btn
+		{
+			padding: 14px;
+			text-align: center;
+			font-size: 14px;
+			font-weight: 700;
+			letter-spacing: 4px;
+			color: $text-main;
+			background-color: rgba(255, 255, 255, 0.03);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 8px;
+			pointer-events: all;
+			cursor: pointer;
+			transition: background-color 0.1s, transform 0.05s;
+
+			&:hover  { background-color: rgba(248, 198, 115, 0.12); border-color: rgba(248, 198, 115, 0.4); }
+			&:active { transform: scale(0.97); }
+
+			&.primary
+			{
+				background-color: rgba(248, 198, 115, 0.15);
+				border-color: rgba(248, 198, 115, 0.55);
+				color: $accent;
+			}
+
+			&.danger
+			{
+				color: $red;
+				border-color: rgba(255, 92, 92, 0.4);
+				&:hover { background-color: rgba(255, 92, 92, 0.1); }
+			}
+		}
+
+		.settings
+		{
+			flex-direction: column;
+			gap: 14px;
+			padding: 8px 4px 16px;
+
+			.row
+			{
+				flex-direction: row;
+				align-items: center;
+				gap: 12px;
+				pointer-events: all;
+
+				.lbl
+				{
+					width: 110px;
+					font-size: 11px;
+					letter-spacing: 2px;
+					color: $text-dim;
+				}
+
+				SliderControl
+				{
+					flex-grow: 1;
+				}
+
+				.val
+				{
+					width: 60px;
+					text-align: right;
+					font-size: 14px;
+					font-weight: 700;
+					color: $accent;
+				}
+			}
+		}
+	}
+}

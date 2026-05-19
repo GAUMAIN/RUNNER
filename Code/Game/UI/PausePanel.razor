@@ -1,0 +1,98 @@
+@using System
+@using Sandbox
+@using Sandbox.UI
+@using Runner.Config
+@inherits PanelComponent
+
+<root>
+	@if ( IsOpen )
+	{
+		<div class="pause">
+			<div class="title">PAUSED</div>
+
+			@if ( !_settingsView )
+			{
+				<div class="btn primary" @onclick=@OnResume>RESUME</div>
+				<div class="btn" @onclick=@OnToggleSettings>SETTINGS</div>
+				<div class="btn danger" @onclick=@OnQuit>QUIT</div>
+			}
+			else
+			{
+				<div class="settings">
+					<div class="row">
+						<div class="lbl">VOLUME</div>
+						<SliderControl Value:bind="@_volume" Min="@(0f)" Max="@(1f)" Step="@(0.05f)" />
+						<div class="val">@((int)(_volume * 100))%</div>
+					</div>
+					<div class="row">
+						<div class="lbl">FOV</div>
+						<SliderControl Value:bind="@_fov" Min="@(60f)" Max="@(110f)" Step="@(1f)" />
+						<div class="val">@((int)_fov)°</div>
+					</div>
+					<div class="row">
+						<div class="lbl">SENSITIVITY</div>
+						<SliderControl Value:bind="@_sensitivity" Min="@(0.1f)" Max="@(2f)" Step="@(0.05f)" />
+						<div class="val">×@_sensitivity.ToString( "0.00", System.Globalization.CultureInfo.InvariantCulture )</div>
+					</div>
+				</div>
+				<div class="btn" @onclick=@OnToggleSettings>BACK</div>
+			}
+		</div>
+	}
+</root>
+
+@code
+{
+	public static bool IsOpen { get; private set; }
+
+	private bool _settingsView;
+	private float _volume = 1f;
+	private float _fov = 80f;
+	private float _sensitivity = 0.5f;
+
+	protected override void OnAwake()
+	{
+		base.OnAwake();
+		// Mirror current settings into the local fields so sliders pick them up.
+		_volume = UserSettings.Volume;
+		_fov = UserSettings.BaseFov;
+		_sensitivity = UserSettings.MouseSensitivity;
+	}
+
+	protected override void OnUpdate()
+	{
+		// Toggle on Escape (or "Menu" action = Q, as fallback)
+		if ( Input.EscapePressed || Input.Pressed( "Menu" ) )
+			Toggle();
+
+		// Push slider values to UserSettings every frame while menu is open
+		if ( IsOpen )
+		{
+			UserSettings.Volume = _volume;
+			UserSettings.BaseFov = _fov;
+			UserSettings.MouseSensitivity = _sensitivity;
+		}
+	}
+
+	private void Toggle()
+	{
+		IsOpen = !IsOpen;
+		Mouse.Visible = IsOpen;
+		if ( !IsOpen )
+			_settingsView = false;
+	}
+
+	private void OnResume() => Toggle();
+
+	private void OnToggleSettings() => _settingsView = !_settingsView;
+
+	private void OnQuit()
+	{
+		// In editor play mode this just stops play. In standalone it'll close to menu.
+		IsOpen = false;
+		Mouse.Visible = false;
+		Sandbox.Game.Close();
+	}
+
+	protected override int BuildHash() => HashCode.Combine( IsOpen, _settingsView, _volume, _fov, _sensitivity );
+}
