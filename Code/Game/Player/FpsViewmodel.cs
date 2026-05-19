@@ -66,12 +66,13 @@ public sealed class FpsViewmodel : Component
 	[Property] public string HandBoneName { get; set; } = "hand_R";
 
 	/// <summary>
-	/// Fine-tune the knife's local pose in the hand. The default forward-offset
-	/// puts the grip in the palm and the blade extending forward of the
-	/// fingers — tune in Inspector if the hand bone's axis convention differs.
+	/// Fine-tune the knife's local pose in the hand. Defaults are tuned for the
+	/// box.vmdl placeholder so it looks knife-shaped (small, flat blade
+	/// extending forward of the hand) instead of a giant cube.
 	/// </summary>
-	[Property] public Vector3 KnifeLocalOffset { get; set; } = new Vector3( 4, 0, 0 );
+	[Property] public Vector3 KnifeLocalOffset { get; set; } = new Vector3( 5, 0, 0 );
 	[Property] public Angles KnifeLocalRotation { get; set; } = new Angles( 0, 0, 0 );
+	[Property] public Vector3 KnifeLocalScale  { get; set; } = new Vector3( 0.35f, 0.03f, 0.07f );
 
 	[Property] public SoundEvent InspectSound { get; set; }
 
@@ -370,16 +371,16 @@ public sealed class FpsViewmodel : Component
 	/// with the engine and always loads. That guarantees the player at least
 	/// sees something at the hand position instead of an empty grip.
 	/// </summary>
-	private static string[] ModelPathsFor( string knifeId ) => knifeId switch
+	private static string[] ModelPathsFor( string knifeId )
 	{
-		"katana"           => new[] { "katana/katana.vmdl",                            "models/knife/knife.vmdl",                          "models/dev/box.vmdl" },
-		"butterfly"        => new[] { "models/butterflyknife/butterfly_knife.vmdl",    "models/knife/knife.vmdl",   "katana/katana.vmdl",  "models/dev/box.vmdl" },
-		"bayonet"          => new[] { "models/weapons/v_m9_bayonet_knife.vmdl",        "models/knife/knife.vmdl",   "katana/katana.vmdl",  "models/dev/box.vmdl" },
-		"karambit"         => new[] { "models/weapons/daggers/dagger_02.vmdl",         "models/knife/knife.vmdl",   "katana/katana.vmdl",  "models/dev/box.vmdl" },
-		"cursed_karambit"  => new[] { "models/weapons/daggers/dagger_01.vmdl",         "models/knife/knife.vmdl",   "katana/katana.vmdl",  "models/dev/box.vmdl" },
-		"skull"            => new[] { "models/knife/knife.vmdl",                       "katana/katana.vmdl",                               "models/dev/box.vmdl" },
-		_                  => new[] { "models/knife/knife.vmdl",                       "katana/katana.vmdl",                               "models/dev/box.vmdl" },
-	};
+		// katana/katana.vmdl is the one model on this install that has BOTH
+		// the .vmdl AND its .vmat + textures fully downloaded — verified by
+		// listing the local download cache. Everything else either errors out
+		// or renders as the engine's checker-pattern (missing materials).
+		// Use it as the universal knife until other packages are properly
+		// installed via S&box's Library Manager.
+		return new[] { "katana/katana.vmdl", "models/dev/box.vmdl" };
+	}
 
 	/// <summary>Place the knife at the arms' hand bone with the configured local offset.</summary>
 	private void UpdateKnife( KnifeSkin knife )
@@ -450,7 +451,14 @@ public sealed class FpsViewmodel : Component
 		var localRot = KnifeLocalRotation.ToRotation();
 		_knifeRoot.WorldRotation = handGo.WorldRotation * localRot;
 		_knifeRoot.WorldPosition = handGo.WorldPosition + handGo.WorldRotation * KnifeLocalOffset;
-		_knifeRoot.WorldScale = Vector3.One;
+
+		// Different .vmdls ship at different native sizes. box.vmdl is a 16u
+		// cube — way too big to look knife-shaped — so we shrink it. katana
+		// renders at native scale.
+		_knifeRoot.WorldScale = (_knifeLoadedId is not null && _knifeRenderer.IsValid()
+			&& (_knifeRenderer.Model?.ResourcePath?.Contains( "/box.vmdl" ) ?? false))
+			? KnifeLocalScale
+			: Vector3.One;
 
 		// Subtle tint by rarity so each skin still reads differently. Pure white
 		// for common — the underlying material handles the metallic look.
