@@ -8,7 +8,9 @@
   "Resources": "/Assets/*",
   "PackageReferences": [
     "facepunch.v_first_person_arms_citizen",
-    "facepunch.v_first_person_arms_human"
+    "facepunch.v_first_person_arms_human",
+    "facepunch.v_m9bayonet",
+    "berrynew.butterfly_knife"
   ],
   "EditorReferences": null,
   "Mounts": null,

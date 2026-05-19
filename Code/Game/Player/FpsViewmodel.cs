@@ -80,11 +80,14 @@ public sealed class FpsViewmodel : Component
 
 	private GameObject _viewmodel;
 	private SkinnedModelRenderer _arms;
+
+	// Real .vmdl knife rendered on the arms' hand bone. We track the currently
+	// loaded knife id so we only swap the Model when the catalog selection
+	// actually changes.
 	private GameObject _knifeRoot;
-	private GameObject _knifeBlade;
-	private GameObject _knifeHandle;
-	private ModelRenderer _knifeBladeRenderer;
-	private ModelRenderer _knifeHandleRenderer;
+	private SkinnedModelRenderer _knifeRenderer;
+	private string _knifeLoadedId;
+
 	private CameraComponent _camera;
 	private Rotation _lastCamRot;
 	private bool _boneWarned;
@@ -168,26 +171,15 @@ public sealed class FpsViewmodel : Component
 			Log.Info( "[FpsViewmodel] No animgraph — model's baked default will play (idle)." );
 		}
 
-		// Knife — non-animated cube primitives, world transform driven from the
-		// arms' hand bone every frame in OnPreRender.
+		// Knife — single SkinnedModelRenderer holding a REAL knife .vmdl. World
+		// transform is driven from the arms' hand bone every frame in OnPreRender.
+		// The actual Model is loaded lazily in UpdateKnife() so we don't pay for
+		// the load until the player actually has a knife equipped.
 		_knifeRoot = new GameObject( true, "Knife" );
-
-		_knifeBlade = new GameObject( true, "Blade" );
-		_knifeBlade.SetParent( _knifeRoot, false );
-		_knifeBladeRenderer = _knifeBlade.Components.Create<ModelRenderer>();
-		_knifeBladeRenderer.Model = Model.Load( "models/dev/box.vmdl" );
-		_knifeBladeRenderer.RenderOptions.Overlay = true;
-		_knifeBladeRenderer.RenderOptions.Game = false;
-		_knifeBladeRenderer.RenderType = ModelRenderer.ShadowRenderType.Off;
-
-		_knifeHandle = new GameObject( true, "Handle" );
-		_knifeHandle.SetParent( _knifeRoot, false );
-		_knifeHandleRenderer = _knifeHandle.Components.Create<ModelRenderer>();
-		_knifeHandleRenderer.Model = Model.Load( "models/dev/box.vmdl" );
-		_knifeHandleRenderer.RenderOptions.Overlay = true;
-		_knifeHandleRenderer.RenderOptions.Game = false;
-		_knifeHandleRenderer.RenderType = ModelRenderer.ShadowRenderType.Off;
-		_knifeHandleRenderer.Tint = new Color( 0.14f, 0.09f, 0.05f );
+		_knifeRenderer = _knifeRoot.Components.Create<SkinnedModelRenderer>();
+		_knifeRenderer.RenderOptions.Overlay = UseOverlayRender;
+		_knifeRenderer.RenderOptions.Game = !UseOverlayRender;
+		_knifeRenderer.RenderType = ModelRenderer.ShadowRenderType.Off;
 	}
 
 	private void DestroyViewmodel()
@@ -281,6 +273,17 @@ public sealed class FpsViewmodel : Component
 			Log.Info( $"[FpsViewmodel] First OnPreRender — viewmodel active, camera at {_camera.WorldPosition}, knife equipped={knife?.Id ?? "none"}" );
 		}
 
+		// Subtle idle sway — three uncorrelated sines on each axis gives a
+		// natural "breathing" motion to the viewmodel without ever drifting
+		// from the camera. Amplitude is small (≈0.15u) so it reads as "alive"
+		// rather than "shaky cam".
+		var t = (float)Time.Now;
+		var idleSway = new Vector3(
+			MathF.Sin( t * 1.4f )       * 0.15f,
+			MathF.Sin( t * 1.8f + 1.1f) * 0.12f,
+			MathF.Sin( t * 2.2f + 2.3f) * 0.10f
+		);
+
 		// One-shot bone dump so we can see exactly what the arms rig exposes
 		// and pick the right grip bone if our default 'hold_R' isn't there.
 		if ( _dumpBonesPending && _arms.IsValid() && _arms.Model is not null && _arms.Model.BoneCount > 0 )
@@ -296,10 +299,10 @@ public sealed class FpsViewmodel : Component
 			Log.Info( $"[FpsViewmodel] Arms rig bones ({n}): {string.Join( ", ", names )}" );
 		}
 
-		// Anchor to camera with the configured local tweak.
+		// Anchor to camera with the configured local tweak + idle sway.
 		_viewmodel.WorldPosition = _camera.WorldPosition;
 		_viewmodel.WorldRotation = _camera.WorldRotation * ViewModelRotation.ToRotation();
-		_viewmodel.LocalPosition += _viewmodel.WorldRotation * ViewModelOffset;
+		_viewmodel.LocalPosition += _viewmodel.WorldRotation * (ViewModelOffset + idleSway);
 		_viewmodel.WorldScale = Vector3.One;
 
 		FeedAnimgraph( pawn );
@@ -344,6 +347,18 @@ public sealed class FpsViewmodel : Component
 		_arms.Set( "aim_yaw", delta.yaw );
 	}
 
+	/// <summary>
+	/// Resolve the real .vmdl path for a given knife id. Falls back to the m9
+	/// bayonet (only one we can guarantee is mounted via the package reference
+	/// in the .sbproj) for any id we don't have a specific model for yet.
+	/// </summary>
+	private static string ModelPathFor( string knifeId ) => knifeId switch
+	{
+		"butterfly"        => "models/butterflyknife/butterfly_knife.vmdl",
+		"bayonet"          => "models/weapons/v_m9_bayonet_knife.vmdl",
+		_                  => "models/weapons/v_m9_bayonet_knife.vmdl",
+	};
+
 	/// <summary>Place the knife at the arms' hand bone with the configured local offset.</summary>
 	private void UpdateKnife( KnifeSkin knife )
 	{
@@ -353,6 +368,7 @@ public sealed class FpsViewmodel : Component
 		if ( knife is null )
 		{
 			_knifeRoot.Enabled = false;
+			_knifeLoadedId = null;
 			return;
 		}
 
@@ -363,6 +379,23 @@ public sealed class FpsViewmodel : Component
 			return;
 		}
 
+		// Swap the knife model only when the equipped knife changes — Model.Load
+		// isn't cheap and we don't want to thrash it every frame.
+		if ( _knifeLoadedId != knife.Id )
+		{
+			var path = ModelPathFor( knife.Id );
+			var m = Model.Load( path );
+			if ( m is null || m.BoneCount == 0 )
+			{
+				Log.Warning( $"[FpsViewmodel] Knife model '{path}' did not resolve (BoneCount={m?.BoneCount ?? 0}). Make sure the package reference is in RUNNER.sbproj." );
+				_knifeRoot.Enabled = false;
+				return;
+			}
+			_knifeRenderer.Model = m;
+			_knifeLoadedId = knife.Id;
+			Log.Info( $"[FpsViewmodel] Loaded knife model '{path}' for '{knife.Id}' (BoneCount={m.BoneCount})" );
+		}
+
 		_knifeRoot.Enabled = true;
 
 		var localRot = KnifeLocalRotation.ToRotation();
@@ -370,9 +403,9 @@ public sealed class FpsViewmodel : Component
 		_knifeRoot.WorldPosition = handGo.WorldPosition + handGo.WorldRotation * KnifeLocalOffset;
 		_knifeRoot.WorldScale = Vector3.One;
 
-		// Tint blade by rarity, dark handle, and apply per-knife shape.
-		_knifeBladeRenderer.Tint = TintFor( knife.Rarity );
-		ApplyShape( knife.Id, _knifeBlade, _knifeHandle );
+		// Subtle tint by rarity so each skin still reads differently. Pure white
+		// for common — the underlying material handles the metallic look.
+		_knifeRenderer.Tint = TintFor( knife.Rarity );
 	}
 
 	private GameObject _resolvedHandBone;
@@ -421,12 +454,19 @@ public sealed class FpsViewmodel : Component
 
 	private void TriggerInspect()
 	{
+		// Fire on BOTH the arms and the knife — whichever rig has the matching
+		// animgraph param will play. Different vmdl ship with different
+		// trigger names, so we splat the common ones.
+		string[] triggers = { "b_deploy", "b_inspect", "b_attack_inspect", "b_holster" };
 		if ( _arms.IsValid() )
 		{
-			// The punching animgraph exposes b_deploy / b_inspect on most rigs;
-			// flip both so whichever the graph supports fires.
-			_arms.Set( "b_deploy", true );
-			_arms.Set( "b_inspect", true );
+			foreach ( var p in triggers )
+				_arms.Set( p, true );
+		}
+		if ( _knifeRenderer.IsValid() )
+		{
+			foreach ( var p in triggers )
+				_knifeRenderer.Set( p, true );
 		}
 
 		var handle = InspectSound is not null
@@ -436,44 +476,17 @@ public sealed class FpsViewmodel : Component
 			handle.Volume *= Runner.Config.UserSettings.Volume;
 	}
 
-	// ─── Per-knife shape preset (mirror of KnifeViewModel) ────────────────
-
-	private static void ApplyShape( string knifeId, GameObject blade, GameObject handle )
-	{
-		var preset = knifeId switch
-		{
-			"katana"           => ( new Vector3( 8,  0, 0),  Rotation.Identity,        new Vector3( 0.50f, 0.025f, 0.06f ),
-									new Vector3(-3,  0, 0),  Rotation.Identity,        new Vector3( 0.18f, 0.07f,  0.06f ) ),
-			"karambit"         => ( new Vector3( 4,  0, 1),  Rotation.From( 0, 0, 35), new Vector3( 0.16f, 0.04f,  0.04f ),
-									new Vector3(-2,  0, 0),  Rotation.Identity,        new Vector3( 0.10f, 0.06f,  0.05f ) ),
-			"cursed_karambit"  => ( new Vector3( 4,  0, 1),  Rotation.From( 0, 0, 40), new Vector3( 0.18f, 0.04f,  0.04f ),
-									new Vector3(-2,  0, 0),  Rotation.Identity,        new Vector3( 0.10f, 0.06f,  0.05f ) ),
-			"butterfly"        => ( new Vector3( 5,  0, 0),  Rotation.Identity,        new Vector3( 0.22f, 0.03f,  0.04f ),
-									new Vector3(-2,  0, 0),  Rotation.Identity,        new Vector3( 0.12f, 0.05f,  0.05f ) ),
-			"bayonet"          => ( new Vector3( 7,  0, 0),  Rotation.Identity,        new Vector3( 0.35f, 0.03f,  0.05f ),
-									new Vector3(-3,  0, 0),  Rotation.Identity,        new Vector3( 0.14f, 0.06f,  0.05f ) ),
-			"skull"            => ( new Vector3( 5,  0, 0),  Rotation.Identity,        new Vector3( 0.26f, 0.035f, 0.04f ),
-									new Vector3(-2,  0, 0),  Rotation.Identity,        new Vector3( 0.10f, 0.06f,  0.05f ) ),
-			_                  => ( new Vector3( 5,  0, 0),  Rotation.Identity,        new Vector3( 0.24f, 0.03f,  0.04f ),
-									new Vector3(-2,  0, 0),  Rotation.Identity,        new Vector3( 0.10f, 0.05f,  0.05f ) ),
-		};
-
-		blade.LocalPosition  = preset.Item1;
-		blade.LocalRotation  = preset.Item2;
-		blade.LocalScale     = preset.Item3;
-		handle.LocalPosition = preset.Item4;
-		handle.LocalRotation = preset.Item5;
-		handle.LocalScale    = preset.Item6;
-	}
-
+	// Subtle rarity tint blended onto the real material — keeps the metal feel.
+	// Common = pure white = pristine PBR material. Higher rarities get a colored
+	// metallic wash so each skin is recognizable without ruining the realism.
 	private static Color TintFor( KnifeRarity r ) => r switch
 	{
-		KnifeRarity.Common   => new Color( 0.78f, 0.80f, 0.85f ),
-		KnifeRarity.Uncommon => new Color( 0.42f, 0.95f, 0.55f ),
-		KnifeRarity.Rare     => new Color( 0.35f, 0.62f, 1.00f ),
-		KnifeRarity.Epic     => new Color( 0.78f, 0.40f, 1.00f ),
-		KnifeRarity.Mythic   => new Color( 1.00f, 0.45f, 0.20f ),
-		KnifeRarity.Secret   => new Color( 1.00f, 0.85f, 0.30f ),
+		KnifeRarity.Common   => Color.White,
+		KnifeRarity.Uncommon => new Color( 0.78f, 1.00f, 0.85f ),
+		KnifeRarity.Rare     => new Color( 0.78f, 0.88f, 1.00f ),
+		KnifeRarity.Epic     => new Color( 0.95f, 0.78f, 1.00f ),
+		KnifeRarity.Mythic   => new Color( 1.00f, 0.80f, 0.65f ),
+		KnifeRarity.Secret   => new Color( 1.00f, 0.92f, 0.65f ),
 		_ => Color.White
 	};
 }
