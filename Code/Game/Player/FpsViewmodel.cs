@@ -72,8 +72,8 @@ public sealed class FpsViewmodel : Component
 	/// the scale shrunk to viewmodel size (the native katana is ~80u long, we
 	/// want it ~10u so it reads as "knife held in hand", not "broomstick").
 	/// </summary>
-	[Property] public Vector3 KnifeLocalOffset   { get; set; } = new Vector3( 2, 4, 1 );
-	[Property] public Angles  KnifeLocalRotation { get; set; } = new Angles( 0, -90, 0 );
+	[Property] public Vector3 KnifeLocalOffset   { get; set; } = new Vector3( 0, -2, 1 );
+	[Property] public Angles  KnifeLocalRotation { get; set; } = new Angles( 0, 90, 0 );
 	[Property] public float   KnifeUniformScale  { get; set; } = 0.12f;
 
 	[Property] public SoundEvent InspectSound { get; set; }
