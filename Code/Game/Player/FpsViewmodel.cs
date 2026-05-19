@@ -66,13 +66,13 @@ public sealed class FpsViewmodel : Component
 	[Property] public string HandBoneName { get; set; } = "hand_R";
 
 	/// <summary>
-	/// Fine-tune the knife's local pose in the hand. Defaults are tuned for the
-	/// box.vmdl placeholder so it looks knife-shaped (small, flat blade
-	/// extending forward of the hand) instead of a giant cube.
+	/// Per-knife pose tuning in the hand bone's local space. Defaults are tuned
+	/// for the katana (the model that actually loads on this install) — handle
+	/// in the palm, blade extending forward along the wrist→fingers axis.
 	/// </summary>
-	[Property] public Vector3 KnifeLocalOffset { get; set; } = new Vector3( 5, 0, 0 );
-	[Property] public Angles KnifeLocalRotation { get; set; } = new Angles( 0, 0, 0 );
-	[Property] public Vector3 KnifeLocalScale  { get; set; } = new Vector3( 0.35f, 0.03f, 0.07f );
+	[Property] public Vector3 KnifeLocalOffset   { get; set; } = new Vector3( 0, 3, 0 );
+	[Property] public Angles  KnifeLocalRotation { get; set; } = new Angles( 0, -90, 0 );
+	[Property] public float   KnifeUniformScale  { get; set; } = 0.5f;
 
 	[Property] public SoundEvent InspectSound { get; set; }
 
@@ -449,14 +449,7 @@ public sealed class FpsViewmodel : Component
 		var localRot = KnifeLocalRotation.ToRotation();
 		_knifeRoot.WorldRotation = handGo.WorldRotation * localRot;
 		_knifeRoot.WorldPosition = handGo.WorldPosition + handGo.WorldRotation * KnifeLocalOffset;
-
-		// Different .vmdls ship at different native sizes. box.vmdl is a 16u
-		// cube — way too big to look knife-shaped — so we shrink it. katana
-		// renders at native scale.
-		_knifeRoot.WorldScale = (_knifeLoadedId is not null && _knifeRenderer.IsValid()
-			&& (_knifeRenderer.Model?.ResourcePath?.Contains( "/box.vmdl" ) ?? false))
-			? KnifeLocalScale
-			: Vector3.One;
+		_knifeRoot.WorldScale = Vector3.One * KnifeUniformScale;
 
 		// Subtle tint by rarity so each skin still reads differently. Pure white
 		// for common — the underlying material handles the metallic look.
