@@ -1,5 +1,6 @@
 using System;
 using Sandbox;
+using Sandbox.Citizen;
 using System.Linq;
 using Runner.Config;
 
@@ -19,6 +20,8 @@ public sealed class PlayerPawn : Component
 
 	[Property] public GameObject Body { get; set; }
 	[Property] public GameObject Eye { get; set; }
+	[Property] public CitizenAnimationHelper AnimationHelper { get; set; }
+	[Property] public SkinnedModelRenderer BodyRenderer { get; set; }
 	[Property] public bool FirstPerson { get; set; } = true;
 
 	/// <summary>Walk speed in units / second.</summary>
@@ -57,6 +60,7 @@ public sealed class PlayerPawn : Component
 
 	private Vector3 _spawnPosition;
 	private bool _spawnCaptured;
+	private float _bodyRotationSpeed;
 
 	protected override void OnEnabled()
 	{
@@ -104,9 +108,36 @@ public sealed class PlayerPawn : Component
 			// Toggle 1st / 3rd person with the View key (C by default).
 			if ( !Mouse.Visible && Input.Pressed( "View" ) )
 				FirstPerson = !FirstPerson;
+
+			// Hide our own body in 1st person so the camera isn't inside the head.
+			if ( BodyRenderer.IsValid() )
+				BodyRenderer.RenderType = FirstPerson
+					? ModelRenderer.ShadowRenderType.ShadowsOnly
+					: ModelRenderer.ShadowRenderType.On;
 		}
 
 		RotateBodyToVelocity();
+		DriveCitizenAnimation();
+	}
+
+	/// <summary>Feed the citizen animgraph with current state so it actually animates.</summary>
+	private void DriveCitizenAnimation()
+	{
+		if ( !AnimationHelper.IsValid() )
+			return;
+
+		var cc = GameObject.Components.Get<CharacterController>();
+		if ( !cc.IsValid() )
+			return;
+
+		AnimationHelper.WithVelocity( cc.Velocity );
+		AnimationHelper.WithWishVelocity( WishVelocity );
+		AnimationHelper.IsGrounded = cc.IsOnGround;
+		AnimationHelper.MoveRotationSpeed = _bodyRotationSpeed;
+		AnimationHelper.WithLook( EyeAngles.Forward, 1f, 1f, 1f );
+		AnimationHelper.MoveStyle = IsSprinting
+			? CitizenAnimationHelper.MoveStyles.Run
+			: CitizenAnimationHelper.MoveStyles.Walk;
 	}
 
 	protected override void OnFixedUpdate()
@@ -288,6 +319,7 @@ public sealed class PlayerPawn : Component
 
 	private void RotateBodyToVelocity()
 	{
+		_bodyRotationSpeed = 0f;
 		if ( !Body.IsValid() )
 			return;
 
@@ -303,7 +335,12 @@ public sealed class PlayerPawn : Component
 
 		float rotateDifference = Body.WorldRotation.Distance( targetAngle );
 		if ( rotateDifference > 50.0f || cc.Velocity.Length > 10.0f )
-			Body.WorldRotation = Rotation.Lerp( Body.WorldRotation, targetAngle, Time.Delta * 2.0f );
+		{
+			var newRotation = Rotation.Lerp( Body.WorldRotation, targetAngle, Time.Delta * 2.0f );
+			var angleDiff = Body.WorldRotation.Angles() - newRotation.Angles();
+			_bodyRotationSpeed = angleDiff.yaw / Time.Delta;
+			Body.WorldRotation = newRotation;
+		}
 	}
 
 	private static void ClampToAntiCheatCeiling( CharacterController cc )

@@ -80,6 +80,15 @@ public sealed class KnifeViewModel : Component
 			return;
 		}
 
+		// Camera-anchored knife is a 1st-person viewmodel. Hide it in 3rd person.
+		var pawn = GameObject.Components.Get<PlayerPawn>();
+		if ( !pawn.IsValid() || !pawn.FirstPerson )
+		{
+			if ( _root.IsValid() )
+				_root.Enabled = false;
+			return;
+		}
+
 		EnsureMeshes();
 
 		if ( !_camera.IsValid() )
