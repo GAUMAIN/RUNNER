@@ -120,15 +120,23 @@ public sealed class FootstepSystem : Component
 		if ( !tr.Hit )
 			return;
 
-		SoundEvent sound = null;
+		var stepPos = tr.HitPosition + tr.Normal * 5f;
 
-		// 1. Per-surface tag override on the hit GameObject (or any of its
-		//    ancestors so a tagged Level container also wins).
-		if ( tr.GameObject.IsValid() )
-			sound = ResolveSurfaceSoundByTag( tr.GameObject );
+		// 1. Per-surface tag override. If a tag matches, play the assigned
+		//    SoundEvent or fall back to the hardcoded path string — Sound.Play
+		//    accepts either, and a string load goes through the engine's
+		//    runtime resource resolver which DOES find these even when the
+		//    SoundEvent ResourceLibrary lookup returns null.
+		if ( tr.GameObject.IsValid()
+			&& TryPlayTaggedSurfaceSound( tr.GameObject, stepPos ) )
+		{
+			_useLeftFoot = !_useLeftFoot;
+			return;
+		}
 
 		// 2. Engine's built-in surface SoundCollection (left/right alternation).
-		if ( sound is null && tr.Surface?.SoundCollection != null )
+		SoundEvent sound = null;
+		if ( tr.Surface?.SoundCollection != null )
 		{
 			sound = _useLeftFoot
 				? tr.Surface.SoundCollection.FootLeft
@@ -142,32 +150,55 @@ public sealed class FootstepSystem : Component
 		if ( sound is null )
 			return;
 
-		var handle = Sound.Play( sound, tr.HitPosition + tr.Normal * 5f );
+		var handle = Sound.Play( sound, stepPos );
 		if ( handle is not null )
 			handle.Volume *= Volume;
 	}
 
 	/// <summary>
-	/// Walk up the GameObject's ancestor chain looking for a "surface_*" tag.
-	/// Returns the matching SoundEvent (Inspector-assigned or hardcoded
-	/// fallback path) for the first tag found.
+	/// Walk the ancestor chain looking for a "surface_*" tag. If we find one,
+	/// play the matching SoundEvent (Inspector-assigned) or the hardcoded path
+	/// string fallback. Returns true if a sound was played.
 	/// </summary>
-	private SoundEvent ResolveSurfaceSoundByTag( GameObject go )
+	private bool TryPlayTaggedSurfaceSound( GameObject go, Vector3 stepPos )
 	{
 		var current = go;
 		int depth = 0;
 		while ( current.IsValid() && depth < 8 )
 		{
-			if ( current.Tags.Has( "surface_grass" ) )    return GrassStepSound    ?? ResourceLibrary.Get<SoundEvent>( GrassPath );
-			if ( current.Tags.Has( "surface_sand" ) )     return SandStepSound     ?? ResourceLibrary.Get<SoundEvent>( SandPath );
-			if ( current.Tags.Has( "surface_concrete" ) ) return ConcreteStepSound ?? ResourceLibrary.Get<SoundEvent>( ConcretePath );
-			if ( current.Tags.Has( "surface_wood" ) )     return WoodStepSound     ?? ResourceLibrary.Get<SoundEvent>( WoodPath );
-			if ( current.Tags.Has( "surface_metal" ) )    return MetalStepSound    ?? ResourceLibrary.Get<SoundEvent>( MetalPath );
-			if ( current.Tags.Has( "surface_glass" ) )    return GlassStepSound    ?? ResourceLibrary.Get<SoundEvent>( GlassPath );
+			if ( current.Tags.Has( "surface_grass" ) )    return PlaySurface( GrassStepSound,    GrassPath,    "grass",    stepPos );
+			if ( current.Tags.Has( "surface_sand" ) )     return PlaySurface( SandStepSound,     SandPath,     "sand",     stepPos );
+			if ( current.Tags.Has( "surface_concrete" ) ) return PlaySurface( ConcreteStepSound, ConcretePath, "concrete", stepPos );
+			if ( current.Tags.Has( "surface_wood" ) )     return PlaySurface( WoodStepSound,     WoodPath,     "wood",     stepPos );
+			if ( current.Tags.Has( "surface_metal" ) )    return PlaySurface( MetalStepSound,    MetalPath,    "metal",    stepPos );
+			if ( current.Tags.Has( "surface_glass" ) )    return PlaySurface( GlassStepSound,    GlassPath,    "glass",    stepPos );
 
 			current = current.Parent;
 			depth++;
 		}
-		return null;
+		return false;
 	}
+
+	private bool _surfaceDebugLogged;
+
+	private bool PlaySurface( SoundEvent assigned, string fallbackPath, string label, Vector3 pos )
+	{
+		var handle = assigned is not null
+			? Sound.Play( assigned, pos )
+			: Sound.Play( fallbackPath, pos );
+
+		if ( handle is null )
+		{
+			if ( !_surfaceDebugLogged )
+			{
+				_surfaceDebugLogged = true;
+				Log.Warning( $"[FootstepSystem] '{label}' sound failed to play (assigned={assigned}, path={fallbackPath})." );
+			}
+			return false;
+		}
+
+		handle.Volume *= Volume;
+		return true;
+	}
+
 }
