@@ -47,15 +47,18 @@ public sealed class KnifeViewModel : Component
 	private ModelRenderer _bladeRenderer;
 	private ModelRenderer _handleRenderer;
 
-	// TPS hierarchy (parented to hold_R bone)
+	// TPS hierarchy — free in the scene, written to bone transform each frame.
 	private GameObject _tpsRoot;
 	private GameObject _tpsBlade;
 	private GameObject _tpsHandle;
 	private ModelRenderer _tpsBladeRenderer;
 	private ModelRenderer _tpsHandleRenderer;
-	private GameObject _attachedBone;
 
 	private CameraComponent _camera;
+
+	// Logged once the first time we resolve (or fail to resolve) the grip bone.
+	private bool _boneDebugLogged;
+	private string _resolvedBoneName;
 
 	protected override void OnEnabled()
 	{
@@ -76,7 +79,6 @@ public sealed class KnifeViewModel : Component
 			_tpsRoot.Destroy();
 			_tpsRoot = null;
 		}
-		_attachedBone = null;
 	}
 
 	// ─── Mesh construction ────────────────────────────────────────────────
@@ -101,23 +103,13 @@ public sealed class KnifeViewModel : Component
 		_handleRenderer.Tint = new Color( 0.14f, 0.09f, 0.05f );
 	}
 
-	private void EnsureTpsMeshes( GameObject boneGo )
+	private void EnsureTpsMeshes()
 	{
-		// Rebuild if the bone reference changed (e.g. citizen re-spawned).
-		if ( _tpsRoot.IsValid() && _attachedBone == boneGo )
+		if ( _tpsRoot.IsValid() )
 			return;
 
-		if ( _tpsRoot.IsValid() )
-		{
-			_tpsRoot.Destroy();
-			_tpsRoot = null;
-		}
-
+		// Free in the scene — we write its WorldTransform from the bone each frame.
 		_tpsRoot = new GameObject( true, "Knife_Held_TPS" );
-		_tpsRoot.SetParent( boneGo, false );
-		_tpsRoot.LocalPosition = TpsLocalOffset;
-		_tpsRoot.LocalRotation = Rotation.From( TpsPitch, TpsYaw, TpsRoll );
-		_tpsRoot.LocalScale = Vector3.One;
 
 		_tpsBlade = new GameObject( true, "Blade" );
 		_tpsBlade.SetParent( _tpsRoot, false );
@@ -129,8 +121,6 @@ public sealed class KnifeViewModel : Component
 		_tpsHandleRenderer = _tpsHandle.Components.Create<ModelRenderer>();
 		_tpsHandleRenderer.Model = Model.Load( "models/dev/box.vmdl" );
 		_tpsHandleRenderer.Tint = new Color( 0.14f, 0.09f, 0.05f );
-
-		_attachedBone = boneGo;
 	}
 
 	// ─── Frame update ─────────────────────────────────────────────────────
@@ -202,41 +192,98 @@ public sealed class KnifeViewModel : Component
 		}
 		else
 		{
-			// TPS: hide camera-anchored knife, show hand-held knife on hold_R.
+			// TPS: hide camera-anchored knife, show hand-held knife on the grip bone.
 			if ( _root.IsValid() )
 				_root.Enabled = false;
 
-			var boneGo = ResolveHoldBone( pawn );
-			if ( !boneGo.IsValid() )
+			if ( !TryResolveHoldTransform( pawn, out var boneTx ) )
 			{
-				// No bone found — nothing to attach to.
 				if ( _tpsRoot.IsValid() )
 					_tpsRoot.Enabled = false;
 				return;
 			}
 
-			EnsureTpsMeshes( boneGo );
+			EnsureTpsMeshes();
 			_tpsRoot.Enabled = true;
 
-			// Keep the root pinned to the bone with the configured tweak each frame
-			// in case the inspector values are tuned at runtime.
-			_tpsRoot.LocalPosition = TpsLocalOffset;
-			_tpsRoot.LocalRotation = Rotation.From( TpsPitch, TpsYaw, TpsRoll );
+			// Position the root at the bone, then apply the local tweak.
+			var tweakRot = Rotation.From( TpsPitch, TpsYaw, TpsRoll );
+			_tpsRoot.WorldRotation = boneTx.Rotation * tweakRot;
+			_tpsRoot.WorldPosition = boneTx.Position + boneTx.Rotation * TpsLocalOffset;
+			_tpsRoot.WorldScale = Vector3.One;
 
 			_tpsBladeRenderer.Tint = bladeTint;
 			ApplyShape( knife.Id, _tpsBlade, _tpsHandle );
 		}
 	}
 
-	private GameObject ResolveHoldBone( PlayerPawn pawn )
+	/// <summary>
+	/// Sample the world transform of the citizen's grip bone. Tries several
+	/// common bone names since rigs vary, and logs the resolved name once for
+	/// debugging.
+	/// </summary>
+	private bool TryResolveHoldTransform( PlayerPawn pawn, out Transform tx )
 	{
-		if ( !pawn.BodyRenderer.IsValid() )
-			return null;
+		tx = global::Transform.Zero;
 
-		// Try the configured grip bone, fall back to hand_R if the rig uses a
-		// different naming convention.
-		return pawn.BodyRenderer.GetBoneObject( HoldBoneName )
-			?? pawn.BodyRenderer.GetBoneObject( "hand_R" );
+		var body = pawn.BodyRenderer;
+		if ( !body.IsValid() || body.Model is null )
+			return false;
+
+		// Candidate names — Citizen rig uses hold_R/hand_R, but be defensive.
+		string[] candidates = new[]
+		{
+			HoldBoneName,
+			"hold_R", "hand_R", "Hand_R",
+			"R_Hand", "RightHand", "right_hand"
+		};
+
+		// Iterate the bone GameObjects directly and match by name. This avoids
+		// relying on the Bones.GetBone(name) API which can return null on some
+		// rigs/versions even when the bone exists.
+		int count = body.Model.BoneCount;
+		for ( int i = 0; i < count; i++ )
+		{
+			var o = body.GetBoneObject( i );
+			if ( !o.IsValid() ) continue;
+			foreach ( var cand in candidates )
+			{
+				if ( string.IsNullOrEmpty( cand ) ) continue;
+				if ( o.Name != cand ) continue;
+
+				if ( !_boneDebugLogged )
+				{
+					_resolvedBoneName = cand;
+					Log.Info( $"[KnifeViewModel] Resolved grip bone '{cand}' at index {i}" );
+					_boneDebugLogged = true;
+				}
+				tx = new global::Transform( o.WorldPosition, o.WorldRotation, 1f );
+				return true;
+			}
+		}
+
+		// Diagnostic: log the first ~40 bone names by iterating bone indices.
+		if ( !_boneDebugLogged )
+		{
+			_boneDebugLogged = true;
+			try
+			{
+				var names = new System.Collections.Generic.List<string>();
+				int count = System.Math.Min( body.Model.BoneCount, 40 );
+				for ( int i = 0; i < count; i++ )
+				{
+					var o = body.GetBoneObject( i );
+					if ( o.IsValid() ) names.Add( o.Name );
+				}
+				Log.Warning( $"[KnifeViewModel] No grip bone found. Available bones (first {count} of {body.Model.BoneCount}): {string.Join( ", ", names )}" );
+			}
+			catch ( System.Exception e )
+			{
+				Log.Warning( $"[KnifeViewModel] No grip bone found and bone enumeration failed: {e.Message}" );
+			}
+		}
+
+		return false;
 	}
 
 	private void HideAll()
