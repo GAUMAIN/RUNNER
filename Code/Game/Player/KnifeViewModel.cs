@@ -163,9 +163,15 @@ public sealed class KnifeViewModel : Component
 			return;
 		}
 
-		// Inspect trigger — only meaningful in FPS, and skipped when paused so we
-		// don't fire it while the user is dragging sliders in the pause menu.
-		if ( pawn.FirstPerson
+		// Resolve once — used both for the inspect-sound gate and the FPS-render gate.
+		var fpsVm = GameObject.Components.Get<FpsViewmodel>();
+		bool fpsVmOwnsView = fpsVm.IsValid() && fpsVm.Enabled;
+
+		// Inspect trigger — only when no FpsViewmodel is on the player. If there
+		// is one, IT owns the inspect (sound + animgraph trigger), so skip here
+		// to avoid playing two sounds.
+		if ( !fpsVmOwnsView
+			&& pawn.FirstPerson
 			&& !Runner.Config.UserSettings.IsPaused
 			&& !IsInspecting
 			&& Input.Pressed( "Inspect" ) )
@@ -184,7 +190,15 @@ public sealed class KnifeViewModel : Component
 
 		if ( pawn.FirstPerson )
 		{
-			// FPS: show camera-anchored knife, hide hand knife.
+			// FpsViewmodel handles the FPS knife → hide both of OUR meshes here.
+			if ( fpsVmOwnsView )
+			{
+				if ( _root.IsValid() )    _root.Enabled    = false;
+				if ( _tpsRoot.IsValid() ) _tpsRoot.Enabled = false;
+				return;
+			}
+
+			// Legacy fallback: no FpsViewmodel → show camera-anchored knife.
 			if ( _tpsRoot.IsValid() )
 				_tpsRoot.Enabled = false;
 

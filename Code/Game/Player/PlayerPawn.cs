@@ -83,6 +83,14 @@ public sealed class PlayerPawn : Component
 		base.OnStart();
 		_spawnPosition = WorldPosition;
 		_spawnCaptured = true;
+
+		// Ensure an FpsViewmodel component exists on the local player so the
+		// 1st-person arms + knife render properly. Proxies skip this — they
+		// don't render a viewmodel for other players.
+		if ( !IsProxy && GameObject.Components.Get<FpsViewmodel>() is null )
+		{
+			GameObject.Components.Create<FpsViewmodel>();
+		}
 	}
 
 	/// <summary>Instant TP back to the captured spawn point. Called on death-by-fall and by cash-out pads.</summary>
