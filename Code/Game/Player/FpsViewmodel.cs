@@ -408,10 +408,19 @@ public sealed class FpsViewmodel : Component
 			foreach ( var path in ModelPathsFor( knife.Id ) )
 			{
 				var m = Model.Load( path );
-				// Treat missing-or-stub (Error or Bounds.Size == 0) as a miss.
-				// A loaded model has non-zero bounds even if it's unrigged.
 				if ( m is null ) continue;
 				if ( m.Bounds.Size.IsNearlyZero() ) continue;
+
+				// When the file is missing, Model.Load returns the ENGINE'S error
+				// model — a red checker cube — instead of null. Its ResourcePath
+				// won't match what we asked for. Filter that case so we fall
+				// through to the next candidate (and eventually to box.vmdl).
+				var loadedPath = m.ResourcePath ?? string.Empty;
+				if ( !PathsMatch( loadedPath, path ) )
+				{
+					Log.Info( $"[FpsViewmodel] '{path}' → engine returned '{loadedPath}', treating as missing." );
+					continue;
+				}
 
 				resolved = m;
 				resolvedPath = path;
@@ -445,6 +454,19 @@ public sealed class FpsViewmodel : Component
 	private GameObject _resolvedHandBone;
 	private string _resolvedHandBoneName;
 
+	/// <summary>
+	/// Case-insensitive trailing-segment match. The engine sometimes returns
+	/// paths with a different case or extra prefix (e.g. addons mount path);
+	/// what matters is that the basename/extension agree with what we asked.
+	/// </summary>
+	private static bool PathsMatch( string loaded, string requested )
+	{
+		if ( string.IsNullOrEmpty( loaded ) || string.IsNullOrEmpty( requested ) ) return false;
+		loaded = loaded.Replace( '\\', '/' ).ToLowerInvariant();
+		requested = requested.Replace( '\\', '/' ).ToLowerInvariant();
+		return loaded.EndsWith( requested ) || requested.EndsWith( loaded );
+	}
+
 	private GameObject ResolveHandBone()
 	{
 		if ( _resolvedHandBone.IsValid() )
@@ -454,20 +476,24 @@ public sealed class FpsViewmodel : Component
 
 		string[] candidates = { HandBoneName, "weapon_root", "weapon_IK_hand_R", "hold_R", "hand_R", "weapon_bone" };
 
+		// IMPORTANT: iterate candidates first, THEN bones. Otherwise low-priority
+		// candidates (hand_R, near the start of the rig) match before we even
+		// check for the right one (weapon_root, much later in the rig but the
+		// proper Source 2 viewmodel attach point).
 		int n = _arms.Model.BoneCount;
-		for ( int i = 0; i < n; i++ )
+		foreach ( var c in candidates )
 		{
-			var o = _arms.GetBoneObject( i );
-			if ( !o.IsValid() ) continue;
-			foreach ( var c in candidates )
+			if ( string.IsNullOrEmpty( c ) ) continue;
+			for ( int i = 0; i < n; i++ )
 			{
-				if ( !string.IsNullOrEmpty( c ) && o.Name == c )
-				{
-					_resolvedHandBone = o;
-					_resolvedHandBoneName = c;
-					Log.Info( $"[FpsViewmodel] Resolved hand bone '{c}' at index {i}" );
-					return o;
-				}
+				var o = _arms.GetBoneObject( i );
+				if ( !o.IsValid() ) continue;
+				if ( o.Name != c ) continue;
+
+				_resolvedHandBone = o;
+				_resolvedHandBoneName = c;
+				Log.Info( $"[FpsViewmodel] Resolved hand bone '{c}' at index {i}" );
+				return o;
 			}
 		}
 
