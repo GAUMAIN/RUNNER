@@ -5,15 +5,16 @@ using Runner.Economy;
 namespace Runner.Player;
 
 /// <summary>
-/// First-person knife viewmodel. Reads the player's equipped knife and renders
-/// a primitive box (tinted by rarity) anchored to the camera each frame.
+/// First-person knife viewmodel. Two primitives — blade + handle — composed
+/// into a recognizable knife silhouette and anchored to the camera each Update.
 ///
-/// Attach to the same GameObject as PlayerPawn / PlayerStats. The mesh is
-/// created at runtime as a root GameObject we own — re-positioned each Update
-/// to follow the camera transform with a screen-corner offset.
+/// Per-knife presets vary the blade shape (Katana long & wide, Karambit short
+/// & angled, Butterfly compact, Bayonet medium…) so each skin reads differently
+/// even without real .vmdl assets.
 ///
-/// Real .vmdl knife models can swap the dev box later; the tint/swap logic
-/// here stays the same.
+/// Tint applies to the blade only; the handle stays dark to read as a grip.
+/// Real .vmdl models can replace the boxes later; the per-knife preset table
+/// (shape + rotation) stays the same.
 /// </summary>
 public sealed class KnifeViewModel : Component
 {
@@ -21,45 +22,52 @@ public sealed class KnifeViewModel : Component
 	[Property] public float RightOffset { get; set; } = 8f;
 	[Property] public float DownOffset { get; set; } = 9f;
 
-	/// <summary>Knife "blade" scale (length, width, thickness).</summary>
-	[Property] public Vector3 ViewScale { get; set; } = new Vector3( 0.3f, 0.04f, 0.04f );
-
-	/// <summary>Yaw/Pitch tweak to make the blade angle look "held".</summary>
-	[Property] public float YawTweak { get; set; } = -12f;
-	[Property] public float PitchTweak { get; set; } = -25f;
+	/// <summary>Yaw/Pitch/Roll tweak to make the blade angle look "held".</summary>
+	[Property] public float YawTweak { get; set; } = -8f;
+	[Property] public float PitchTweak { get; set; } = -22f;
 	[Property] public float RollTweak { get; set; } = 0f;
 
-	private GameObject _knifeGO;
-	private ModelRenderer _renderer;
+	private GameObject _root;
+	private GameObject _blade;
+	private GameObject _handle;
+	private ModelRenderer _bladeRenderer;
+	private ModelRenderer _handleRenderer;
 	private CameraComponent _camera;
 
 	protected override void OnEnabled()
 	{
 		base.OnEnabled();
-		EnsureKnife();
+		EnsureMeshes();
 	}
 
 	protected override void OnDisabled()
 	{
 		base.OnDisabled();
-		if ( _knifeGO.IsValid() )
+		if ( _root.IsValid() )
 		{
-			_knifeGO.Destroy();
-			_knifeGO = null;
+			_root.Destroy();
+			_root = null;
 		}
 	}
 
-	private void EnsureKnife()
+	private void EnsureMeshes()
 	{
-		if ( _knifeGO.IsValid() )
+		if ( _root.IsValid() )
 			return;
 
-		_knifeGO = new GameObject( true, "Knife_Viewmodel" );
-		_knifeGO.Tags.Add( "viewmodel" );
+		_root = new GameObject( true, "Knife_Viewmodel" );
+		_root.Tags.Add( "viewmodel" );
 
-		_renderer = _knifeGO.Components.Create<ModelRenderer>();
-		_renderer.Model = Model.Load( "models/dev/box.vmdl" );
-		_renderer.Tint = Color.White;
+		_blade = new GameObject( true, "Blade" );
+		_blade.SetParent( _root, false );
+		_bladeRenderer = _blade.Components.Create<ModelRenderer>();
+		_bladeRenderer.Model = Model.Load( "models/dev/box.vmdl" );
+
+		_handle = new GameObject( true, "Handle" );
+		_handle.SetParent( _root, false );
+		_handleRenderer = _handle.Components.Create<ModelRenderer>();
+		_handleRenderer.Model = Model.Load( "models/dev/box.vmdl" );
+		_handleRenderer.Tint = new Color( 0.14f, 0.09f, 0.05f ); // dark wood/leather grip
 	}
 
 	protected override void OnUpdate()
@@ -67,38 +75,42 @@ public sealed class KnifeViewModel : Component
 		// Only the local owner sees their own viewmodel.
 		if ( IsProxy )
 		{
-			if ( _knifeGO.IsValid() )
-				_knifeGO.Enabled = false;
+			if ( _root.IsValid() )
+				_root.Enabled = false;
 			return;
 		}
 
-		EnsureKnife();
+		EnsureMeshes();
 
 		if ( !_camera.IsValid() )
 			_camera = Scene.GetAllComponents<CameraComponent>().FirstOrDefault();
 		if ( !_camera.IsValid() )
 		{
-			_knifeGO.Enabled = false;
+			_root.Enabled = false;
 			return;
 		}
 
 		var stats = GameObject.Components.Get<PlayerStats>();
 		if ( !stats.IsValid() || string.IsNullOrEmpty( stats.EquippedKnifeId ) )
 		{
-			_knifeGO.Enabled = false;
+			_root.Enabled = false;
 			return;
 		}
 
 		var knife = KnifeCatalog.GetById( stats.EquippedKnifeId );
 		if ( knife is null )
 		{
-			_knifeGO.Enabled = false;
+			_root.Enabled = false;
 			return;
 		}
 
-		_knifeGO.Enabled = true;
-		_renderer.Tint = TintFor( knife.Rarity );
+		_root.Enabled = true;
+		_bladeRenderer.Tint = TintFor( knife.Rarity );
 
+		// Per-knife shape preset
+		ApplyShape( knife.Id );
+
+		// Anchor root to camera with screen-corner offset
 		var camRot = _camera.WorldRotation;
 		var camPos = _camera.WorldPosition;
 		var worldOffset =
@@ -106,9 +118,40 @@ public sealed class KnifeViewModel : Component
 			+ camRot.Right   * RightOffset
 			+ camRot.Up      * -DownOffset;
 
-		_knifeGO.WorldPosition = camPos + worldOffset;
-		_knifeGO.WorldRotation = camRot * Rotation.From( PitchTweak, YawTweak, RollTweak );
-		_knifeGO.WorldScale = ViewScale;
+		_root.WorldPosition = camPos + worldOffset;
+		_root.WorldRotation = camRot * Rotation.From( PitchTweak, YawTweak, RollTweak );
+		_root.WorldScale = Vector3.One;
+	}
+
+	/// <summary>Set blade + handle local transforms to match the knife's silhouette.</summary>
+	private void ApplyShape( string knifeId )
+	{
+		// Format: (bladeLocalPos, bladeLocalRot, bladeScale, handleLocalPos, handleLocalRot, handleScale)
+		// All in local space of _root. +X = forward, +Y = right (Source), +Z = up.
+		var preset = knifeId switch
+		{
+			"katana"           => ( new Vector3( 8,  0, 0),  Rotation.Identity,           new Vector3( 0.50f, 0.025f, 0.06f ),
+									new Vector3(-3,  0, 0),  Rotation.Identity,           new Vector3( 0.18f, 0.07f,  0.06f ) ),
+			"karambit"         => ( new Vector3( 4,  0, 1),  Rotation.From( 0, 0, 35),    new Vector3( 0.16f, 0.04f,  0.04f ),
+									new Vector3(-2,  0, 0),  Rotation.Identity,           new Vector3( 0.10f, 0.06f,  0.05f ) ),
+			"cursed_karambit"  => ( new Vector3( 4,  0, 1),  Rotation.From( 0, 0, 40),    new Vector3( 0.18f, 0.04f,  0.04f ),
+									new Vector3(-2,  0, 0),  Rotation.Identity,           new Vector3( 0.10f, 0.06f,  0.05f ) ),
+			"butterfly"        => ( new Vector3( 5,  0, 0),  Rotation.Identity,           new Vector3( 0.22f, 0.03f,  0.04f ),
+									new Vector3(-2,  0, 0),  Rotation.Identity,           new Vector3( 0.12f, 0.05f,  0.05f ) ),
+			"bayonet"          => ( new Vector3( 7,  0, 0),  Rotation.Identity,           new Vector3( 0.35f, 0.03f,  0.05f ),
+									new Vector3(-3,  0, 0),  Rotation.Identity,           new Vector3( 0.14f, 0.06f,  0.05f ) ),
+			"skull"            => ( new Vector3( 5,  0, 0),  Rotation.Identity,           new Vector3( 0.26f, 0.035f, 0.04f ),
+									new Vector3(-2,  0, 0),  Rotation.Identity,           new Vector3( 0.10f, 0.06f,  0.05f ) ),
+			_                  => ( new Vector3( 5,  0, 0),  Rotation.Identity,           new Vector3( 0.24f, 0.03f,  0.04f ),  // steel
+									new Vector3(-2,  0, 0),  Rotation.Identity,           new Vector3( 0.10f, 0.05f,  0.05f ) ),
+		};
+
+		_blade.LocalPosition  = preset.Item1;
+		_blade.LocalRotation  = preset.Item2;
+		_blade.LocalScale     = preset.Item3;
+		_handle.LocalPosition = preset.Item4;
+		_handle.LocalRotation = preset.Item5;
+		_handle.LocalScale    = preset.Item6;
 	}
 
 	private static Color TintFor( KnifeRarity r ) => r switch
