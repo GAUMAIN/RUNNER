@@ -301,13 +301,13 @@ public sealed class KnifeViewModel : Component
 			try
 			{
 				var names = new System.Collections.Generic.List<string>();
-				int count = System.Math.Min( body.Model.BoneCount, 40 );
-				for ( int i = 0; i < count; i++ )
+				int sample = System.Math.Min( body.Model.BoneCount, 40 );
+				for ( int i = 0; i < sample; i++ )
 				{
 					var o = body.GetBoneObject( i );
 					if ( o.IsValid() ) names.Add( o.Name );
 				}
-				Log.Warning( $"[KnifeViewModel] No grip bone found. Available bones (first {count} of {body.Model.BoneCount}): {string.Join( ", ", names )}" );
+				Log.Warning( $"[KnifeViewModel] No grip bone found. Available bones (first {sample} of {body.Model.BoneCount}): {string.Join( ", ", names )}" );
 			}
 			catch ( System.Exception e )
 			{
