@@ -187,7 +187,7 @@ public sealed class FootstepSystem : Component
 		return false;
 	}
 
-	private readonly System.Collections.Generic.HashSet<Guid> _loggedHits = new();
+	private readonly System.Collections.Generic.HashSet<System.Guid> _loggedHits = new();
 
 	private bool _surfaceDebugLogged;
 
