@@ -55,8 +55,13 @@ public sealed class FpsViewmodel : Component
 
 	// ─── Knife attachment ─────────────────────────────────────────────────
 
-	/// <summary>Name of the hand bone on the arms rig where the knife clips.</summary>
-	[Property] public string HandBoneName { get; set; } = "hold_R";
+	/// <summary>
+	/// Name of the bone on the arms rig where the knife attaches. On the Facepunch
+	/// FPS arms rig, the proper attach point is "weapon_root" (the standard Source
+	/// 2 viewmodel convention) — the hand IK-targets it. "hand_R" is the wrist
+	/// origin and gives a wrong-feeling pose.
+	/// </summary>
+	[Property] public string HandBoneName { get; set; } = "weapon_root";
 
 	/// <summary>Fine-tune the knife's local pose in the hand.</summary>
 	[Property] public Vector3 KnifeLocalOffset { get; set; } = new Vector3( 0, 0, 0 );
@@ -348,15 +353,24 @@ public sealed class FpsViewmodel : Component
 	}
 
 	/// <summary>
-	/// Resolve the real .vmdl path for a given knife id. Falls back to the m9
-	/// bayonet (only one we can guarantee is mounted via the package reference
-	/// in the .sbproj) for any id we don't have a specific model for yet.
+	/// Candidate .vmdl paths to try for a given knife id, in priority order.
+	/// We try each one until <see cref="Model.Load"/> returns a model with
+	/// BoneCount &gt; 0. Different paths may or may not be mounted depending on
+	/// which Facepunch / community packages the local S&amp;box install has
+	/// actually downloaded vs. just listed in the registry.
+	///
+	/// Last entry in every list is <c>katana/katana.vmdl</c> — empirically the
+	/// most reliably-mounted blade asset, so we always have SOMETHING to show.
 	/// </summary>
-	private static string ModelPathFor( string knifeId ) => knifeId switch
+	private static string[] ModelPathsFor( string knifeId ) => knifeId switch
 	{
-		"butterfly"        => "models/butterflyknife/butterfly_knife.vmdl",
-		"bayonet"          => "models/weapons/v_m9_bayonet_knife.vmdl",
-		_                  => "models/weapons/v_m9_bayonet_knife.vmdl",
+		"katana"           => new[] { "katana/katana.vmdl" },
+		"butterfly"        => new[] { "models/butterflyknife/butterfly_knife.vmdl", "models/knife/knife.vmdl", "katana/katana.vmdl" },
+		"bayonet"          => new[] { "models/weapons/v_m9_bayonet_knife.vmdl",       "models/knife/knife.vmdl", "katana/katana.vmdl" },
+		"karambit"         => new[] { "models/weapons/daggers/dagger_02.vmdl",        "models/knife/knife.vmdl", "katana/katana.vmdl" },
+		"cursed_karambit"  => new[] { "models/weapons/daggers/dagger_01.vmdl",        "models/knife/knife.vmdl", "katana/katana.vmdl" },
+		"skull"            => new[] { "models/knife/knife.vmdl",                       "katana/katana.vmdl" },
+		_                  => new[] { "models/knife/knife.vmdl",                       "katana/katana.vmdl" },
 	};
 
 	/// <summary>Place the knife at the arms' hand bone with the configured local offset.</summary>
@@ -380,20 +394,39 @@ public sealed class FpsViewmodel : Component
 		}
 
 		// Swap the knife model only when the equipped knife changes — Model.Load
-		// isn't cheap and we don't want to thrash it every frame.
+		// isn't cheap and we don't want to thrash it every frame. We try each
+		// candidate path in order until one resolves to a non-empty model. Many
+		// "downloaded" Facepunch packages are only registered (thumbnail-only)
+		// and don't actually mount — so we always have a katana fallback last.
 		if ( _knifeLoadedId != knife.Id )
 		{
-			var path = ModelPathFor( knife.Id );
-			var m = Model.Load( path );
-			if ( m is null || m.BoneCount == 0 )
+			Model resolved = null;
+			string resolvedPath = null;
+
+			foreach ( var path in ModelPathsFor( knife.Id ) )
 			{
-				Log.Warning( $"[FpsViewmodel] Knife model '{path}' did not resolve (BoneCount={m?.BoneCount ?? 0}). Make sure the package reference is in RUNNER.sbproj." );
+				var m = Model.Load( path );
+				// A package that registered but didn't fully download returns a
+				// placeholder with BoneCount==0 instead of failing — treat that as
+				// a miss too.
+				if ( m is not null && m.BoneCount > 0 )
+				{
+					resolved = m;
+					resolvedPath = path;
+					break;
+				}
+			}
+
+			if ( resolved is null )
+			{
+				Log.Warning( $"[FpsViewmodel] No knife model resolved for '{knife.Id}' — tried: {string.Join( ", ", ModelPathsFor( knife.Id ) )}. Knife will not render." );
 				_knifeRoot.Enabled = false;
 				return;
 			}
-			_knifeRenderer.Model = m;
+
+			_knifeRenderer.Model = resolved;
 			_knifeLoadedId = knife.Id;
-			Log.Info( $"[FpsViewmodel] Loaded knife model '{path}' for '{knife.Id}' (BoneCount={m.BoneCount})" );
+			Log.Info( $"[FpsViewmodel] Loaded knife model '{resolvedPath}' for '{knife.Id}' (BoneCount={resolved.BoneCount})" );
 		}
 
 		_knifeRoot.Enabled = true;
@@ -418,7 +451,7 @@ public sealed class FpsViewmodel : Component
 
 		if ( !_arms.IsValid() || _arms.Model is null ) return null;
 
-		string[] candidates = { HandBoneName, "hold_R", "hand_R", "weapon_bone" };
+		string[] candidates = { HandBoneName, "weapon_root", "weapon_IK_hand_R", "hold_R", "hand_R", "weapon_bone" };
 
 		int n = _arms.Model.BoneCount;
 		for ( int i = 0; i < n; i++ )
