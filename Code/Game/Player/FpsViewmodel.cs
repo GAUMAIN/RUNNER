@@ -56,15 +56,21 @@ public sealed class FpsViewmodel : Component
 	// ─── Knife attachment ─────────────────────────────────────────────────
 
 	/// <summary>
-	/// Name of the bone on the arms rig where the knife attaches. On the Facepunch
-	/// FPS arms rig, the proper attach point is "weapon_root" (the standard Source
-	/// 2 viewmodel convention) — the hand IK-targets it. "hand_R" is the wrist
-	/// origin and gives a wrong-feeling pose.
+	/// Bone the knife attaches to. Source 2 convention says "weapon_root" — but
+	/// only when the viewmodel's animgraph actually drives that bone. Our
+	/// fallback "punching" graph doesn't animate weapon_root, so it sticks to
+	/// its bind-pose position near the rig origin → the knife ends up inside
+	/// the camera and is invisible. "hand_R" IS animated, so the knife follows
+	/// the hand. We just add a small forward offset so it sits in the palm.
 	/// </summary>
-	[Property] public string HandBoneName { get; set; } = "weapon_root";
+	[Property] public string HandBoneName { get; set; } = "hand_R";
 
-	/// <summary>Fine-tune the knife's local pose in the hand.</summary>
-	[Property] public Vector3 KnifeLocalOffset { get; set; } = new Vector3( 0, 0, 0 );
+	/// <summary>
+	/// Fine-tune the knife's local pose in the hand. The default forward-offset
+	/// puts the grip in the palm and the blade extending forward of the
+	/// fingers — tune in Inspector if the hand bone's axis convention differs.
+	/// </summary>
+	[Property] public Vector3 KnifeLocalOffset { get; set; } = new Vector3( 4, 0, 0 );
 	[Property] public Angles KnifeLocalRotation { get; set; } = new Angles( 0, 0, 0 );
 
 	[Property] public SoundEvent InspectSound { get; set; }
@@ -492,7 +498,7 @@ public sealed class FpsViewmodel : Component
 
 				_resolvedHandBone = o;
 				_resolvedHandBoneName = c;
-				Log.Info( $"[FpsViewmodel] Resolved hand bone '{c}' at index {i}" );
+				Log.Info( $"[FpsViewmodel] Resolved hand bone '{c}' at index {i} (WorldPos={o.WorldPosition})" );
 				return o;
 			}
 		}
