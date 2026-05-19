@@ -211,9 +211,9 @@ public sealed class FootstepSystem : Component
 		// Level 2 → sand
 		if ( name.StartsWith( "L2_" ) ) return Surface.Sand;
 
-		// Reserved for future levels / mechanics
-		if ( name.StartsWith( "L3_" ) ) return Surface.None; // keep default for now
-		if ( name.StartsWith( "L4_" ) ) return Surface.None;
+		// Level 3 → wood, Level 4 → metal
+		if ( name.StartsWith( "L3_" ) ) return Surface.Wood;
+		if ( name.StartsWith( "L4_" ) ) return Surface.Metal;
 
 		return Surface.None;
 	}
