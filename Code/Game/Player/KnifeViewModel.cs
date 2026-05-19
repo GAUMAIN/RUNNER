@@ -18,20 +18,27 @@ namespace Runner.Player;
 /// </summary>
 public sealed class KnifeViewModel : Component
 {
-	[Property] public float ForwardOffset { get; set; } = 14f;
-	[Property] public float RightOffset { get; set; } = 8f;
-	[Property] public float DownOffset { get; set; } = 9f;
+	[Property] public float ForwardOffset { get; set; } = 13f;
+	[Property] public float RightOffset { get; set; } = 10f;
+	[Property] public float DownOffset { get; set; } = 11f;
 
 	/// <summary>Yaw/Pitch/Roll tweak to make the blade angle look "held".</summary>
-	[Property] public float YawTweak { get; set; } = -8f;
-	[Property] public float PitchTweak { get; set; } = -22f;
-	[Property] public float RollTweak { get; set; } = 0f;
+	[Property] public float YawTweak { get; set; } = -18f;
+	[Property] public float PitchTweak { get; set; } = -32f;
+	[Property] public float RollTweak { get; set; } = -10f;
+
+	/// <summary>Skin/glove tint for the placeholder arm pieces (light grey gloves like CS).</summary>
+	[Property] public Color GloveTint { get; set; } = new Color( 0.70f, 0.71f, 0.74f );
 
 	private GameObject _root;
 	private GameObject _blade;
 	private GameObject _handle;
+	private GameObject _hand;
+	private GameObject _forearm;
 	private ModelRenderer _bladeRenderer;
 	private ModelRenderer _handleRenderer;
+	private ModelRenderer _handRenderer;
+	private ModelRenderer _forearmRenderer;
 	private CameraComponent _camera;
 
 	protected override void OnEnabled()
@@ -68,6 +75,25 @@ public sealed class KnifeViewModel : Component
 		_handleRenderer = _handle.Components.Create<ModelRenderer>();
 		_handleRenderer.Model = Model.Load( "models/dev/box.vmdl" );
 		_handleRenderer.Tint = new Color( 0.14f, 0.09f, 0.05f ); // dark wood/leather grip
+
+		// Hand wrapping the handle — a small sphere = fist
+		_hand = new GameObject( true, "Hand" );
+		_hand.SetParent( _root, false );
+		_hand.LocalPosition = new Vector3( -2.5f, 0, -0.5f );
+		_hand.LocalScale = new Vector3( 0.10f, 0.11f, 0.11f );
+		_handRenderer = _hand.Components.Create<ModelRenderer>();
+		_handRenderer.Model = Model.Load( "models/dev/sphere.vmdl" );
+		_handRenderer.Tint = GloveTint;
+
+		// Forearm trailing back toward the camera (off-screen bottom)
+		_forearm = new GameObject( true, "Forearm" );
+		_forearm.SetParent( _root, false );
+		_forearm.LocalPosition = new Vector3( -7f, 0.5f, -2f );
+		_forearm.LocalRotation = Rotation.From( 12, 6, 0 );
+		_forearm.LocalScale = new Vector3( 0.22f, 0.09f, 0.09f );
+		_forearmRenderer = _forearm.Components.Create<ModelRenderer>();
+		_forearmRenderer.Model = Model.Load( "models/dev/box.vmdl" );
+		_forearmRenderer.Tint = GloveTint;
 	}
 
 	protected override void OnUpdate()
