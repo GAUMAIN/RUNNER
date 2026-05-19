@@ -162,32 +162,60 @@ public sealed class FootstepSystem : Component
 	/// </summary>
 	private bool TryPlayTaggedSurfaceSound( GameObject go, Vector3 stepPos )
 	{
+		// Walk ancestors looking for a recognised name pattern. Name-based
+		// detection because Tags-based was unreliable: S&box re-saves the
+		// scene on load and strips Tags strings that don't match its expected
+		// serialization format. Names ARE preserved.
 		var current = go;
 		int depth = 0;
 		while ( current.IsValid() && depth < 8 )
 		{
-			if ( current.Tags.Has( "surface_grass" ) )    return PlaySurface( GrassStepSound,    GrassPath,    "grass",    stepPos );
-			if ( current.Tags.Has( "surface_sand" ) )     return PlaySurface( SandStepSound,     SandPath,     "sand",     stepPos );
-			if ( current.Tags.Has( "surface_concrete" ) ) return PlaySurface( ConcreteStepSound, ConcretePath, "concrete", stepPos );
-			if ( current.Tags.Has( "surface_wood" ) )     return PlaySurface( WoodStepSound,     WoodPath,     "wood",     stepPos );
-			if ( current.Tags.Has( "surface_metal" ) )    return PlaySurface( MetalStepSound,    MetalPath,    "metal",    stepPos );
-			if ( current.Tags.Has( "surface_glass" ) )    return PlaySurface( GlassStepSound,    GlassPath,    "glass",    stepPos );
-
+			var surface = ClassifyByName( current.Name );
+			if ( surface != Surface.None )
+			{
+				return surface switch
+				{
+					Surface.Grass    => PlaySurface( GrassStepSound,    GrassPath,    "grass",    stepPos ),
+					Surface.Sand     => PlaySurface( SandStepSound,     SandPath,     "sand",     stepPos ),
+					Surface.Concrete => PlaySurface( ConcreteStepSound, ConcretePath, "concrete", stepPos ),
+					Surface.Wood     => PlaySurface( WoodStepSound,     WoodPath,     "wood",     stepPos ),
+					Surface.Metal    => PlaySurface( MetalStepSound,    MetalPath,    "metal",    stepPos ),
+					Surface.Glass    => PlaySurface( GlassStepSound,    GlassPath,    "glass",    stepPos ),
+					_ => false,
+				};
+			}
 			current = current.Parent;
 			depth++;
-		}
-
-		// Diagnostic: log what got hit and what tags it actually has, once
-		// per unique GameObject. Helps figure out why a tag isn't being seen.
-		if ( !_loggedHits.Contains( go.Id ) )
-		{
-			_loggedHits.Add( go.Id );
-			Log.Info( $"[FootstepSystem] Trace hit '{go.Name}' (id={go.Id}) tags={go.Tags} — no surface_* tag matched." );
 		}
 		return false;
 	}
 
-	private readonly System.Collections.Generic.HashSet<System.Guid> _loggedHits = new();
+	private enum Surface { None, Grass, Sand, Concrete, Wood, Metal, Glass }
+
+	/// <summary>
+	/// Map a GameObject's Name to its surface type. Edit this when adding new
+	/// levels or renaming objects — central place, no scene edits needed.
+	/// </summary>
+	private static Surface ClassifyByName( string name )
+	{
+		if ( string.IsNullOrEmpty( name ) ) return Surface.None;
+
+		// Hub + Level 1 → grass
+		if ( name == "Plaza_Hub" ) return Surface.Grass;
+		if ( name == "CashOutPad" ) return Surface.Grass;
+		if ( name.StartsWith( "Platform_" ) ) return Surface.Grass;
+		if ( name.StartsWith( "L1_" ) ) return Surface.Grass;
+		if ( name.StartsWith( "Hub_" ) ) return Surface.Grass;
+
+		// Level 2 → sand
+		if ( name.StartsWith( "L2_" ) ) return Surface.Sand;
+
+		// Reserved for future levels / mechanics
+		if ( name.StartsWith( "L3_" ) ) return Surface.None; // keep default for now
+		if ( name.StartsWith( "L4_" ) ) return Surface.None;
+
+		return Surface.None;
+	}
 
 	private bool _surfaceDebugLogged;
 
