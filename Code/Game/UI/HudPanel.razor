@@ -5,6 +5,7 @@
 @using Runner.Player
 @using Runner.Events
 @using Runner.Systems
+@using Runner.Economy
 @inherits PanelComponent
 
 <root>
@@ -42,6 +43,18 @@
 				</div>
 			</div>
 		</div>
+
+		@{ var equippedKnife = string.IsNullOrEmpty( _stats.EquippedKnifeId ) ? null : KnifeCatalog.GetById( _stats.EquippedKnifeId ); }
+		@if ( equippedKnife is not null )
+		{
+			<div class="knife-badge @($"rarity-{equippedKnife.Rarity.ToString().ToLower()}")">
+				<div class="knife-glyph">🗡</div>
+				<div class="knife-text">
+					<div class="knife-name">@equippedKnife.Name</div>
+					<div class="knife-rarity">@KnifeCatalog.RarityLabel( equippedKnife.Rarity ) · EQUIPPED</div>
+				</div>
+			</div>
+		}
 
 		<div class="speedometer">
 			<div class="speed-value">@((int)_speed)</div>
@@ -179,6 +192,7 @@
 	{
 		int level = _stats.IsValid() ? _stats.Level : 0;
 		long coins = _stats.IsValid() ? _stats.Coins : 0;
-		return HashCode.Combine( level, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid(), IsFlashing, coins );
+		string knife = _stats.IsValid() ? _stats.EquippedKnifeId : "";
+		return HashCode.Combine( level, _xpInLevel, _xpNeeded, (int)_speed, _stats.IsValid(), IsFlashing, coins, knife );
 	}
 }

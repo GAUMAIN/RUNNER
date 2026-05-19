@@ -27,6 +27,59 @@ HudPanel
 	}
 
 	// ───────────────────────────────────────────────────────────────────────
+	// Equipped knife badge (top-right) — rarity-tinted
+	// ───────────────────────────────────────────────────────────────────────
+	.knife-badge
+	{
+		position: absolute;
+		top: 24px;
+		right: 24px;
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 16px;
+		background-color: rgba(8, 12, 20, 0.65);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-left: 4px solid rgba(255, 255, 255, 0.3);
+		border-radius: 8px;
+		backdrop-filter: blur( 12px );
+
+		.knife-glyph
+		{
+			font-size: 28px;
+			color: rgba(255, 255, 255, 0.85);
+			text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+		}
+
+		.knife-text
+		{
+			flex-direction: column;
+			gap: 2px;
+
+			.knife-name
+			{
+				font-size: 16px;
+				font-weight: 700;
+				color: white;
+			}
+
+			.knife-rarity
+			{
+				font-size: 9px;
+				letter-spacing: 2px;
+				color: rgba(255, 255, 255, 0.55);
+			}
+		}
+
+		&.rarity-common   { border-left-color: #b3c4d4; .knife-rarity { color: #b3c4d4; } }
+		&.rarity-uncommon { border-left-color: #6dffaa; .knife-rarity { color: #6dffaa; } }
+		&.rarity-rare     { border-left-color: #4aa3ff; .knife-rarity { color: #4aa3ff; } }
+		&.rarity-epic     { border-left-color: #c47bff; .knife-rarity { color: #c47bff; } }
+		&.rarity-mythic   { border-left-color: #ff7a4a; .knife-rarity { color: #ff7a4a; } box-shadow: 0 0 18px rgba(255, 122, 74, 0.4); }
+		&.rarity-secret   { border-left-color: #ffd64a; .knife-rarity { color: #ffd64a; } box-shadow: 0 0 24px rgba(255, 214, 74, 0.55); }
+	}
+
+	// ───────────────────────────────────────────────────────────────────────
 	// Speed vignette — cyan halo on screen edges, intensity scales with speed
 	// ───────────────────────────────────────────────────────────────────────
 	.speed-vignette
