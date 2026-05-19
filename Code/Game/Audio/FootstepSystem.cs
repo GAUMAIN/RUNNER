@@ -51,15 +51,16 @@ public sealed class FootstepSystem : Component
 	[Property, Group( "Level Step Sounds" )] public SoundEvent MetalStepSound { get; set; }
 	[Property, Group( "Level Step Sounds" )] public SoundEvent GlassStepSound { get; set; }
 
-	// Hardcoded fallback paths — S&box ships these in the surfaces/sounds tree.
-	// "Sand" uses wood as a substitute since no sand footsteps asset exists in
-	// the base install; swap if you install a sand pack later.
-	private const string GrassPath    = "surfaces/sounds/grass/grass_footsteps.sound";
-	private const string SandPath     = "surfaces/sounds/wood/wood_footsteps.sound";
-	private const string ConcretePath = "surfaces/sounds/footsteps_concrete.sound";
-	private const string WoodPath     = "surfaces/sounds/wood/wood_footsteps.sound";
-	private const string MetalPath    = "surfaces/sounds/metallic/metal_footsteps.sound";
-	private const string GlassPath    = "surfaces/sounds/glass/glass_sheet_footsteps.sound";
+	// Hardcoded fallback paths — these are in S&box CORE (auto-mounted, no
+	// PackageReference needed). The 'surfaces/sounds/*' paths from the cloud
+	// surfaces package weren't resolving at runtime.
+	// "Sand" uses dirt — closest core asset to a sand texture sonically.
+	private const string GrassPath    = "sounds/footsteps/footstep-grass.sound";
+	private const string SandPath     = "sounds/footsteps/footstep-dirt.sound";
+	private const string ConcretePath = "sounds/footsteps/footstep-concrete.sound";
+	private const string WoodPath     = "sounds/footsteps/footstep-wood.sound";
+	private const string MetalPath    = "sounds/footsteps/footstep-metal.sound";
+	private const string GlassPath    = "sounds/footsteps/footstep-glass.sound";
 
 	private TimeSince _timeSinceStep;
 	private bool _useLeftFoot;
