@@ -176,8 +176,18 @@ public sealed class FootstepSystem : Component
 			current = current.Parent;
 			depth++;
 		}
+
+		// Diagnostic: log what got hit and what tags it actually has, once
+		// per unique GameObject. Helps figure out why a tag isn't being seen.
+		if ( !_loggedHits.Contains( go.Id ) )
+		{
+			_loggedHits.Add( go.Id );
+			Log.Info( $"[FootstepSystem] Trace hit '{go.Name}' (id={go.Id}) tags={go.Tags} — no surface_* tag matched." );
+		}
 		return false;
 	}
+
+	private readonly System.Collections.Generic.HashSet<Guid> _loggedHits = new();
 
 	private bool _surfaceDebugLogged;
 
