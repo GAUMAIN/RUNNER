@@ -373,12 +373,10 @@ public sealed class FpsViewmodel : Component
 	/// </summary>
 	private static string[] ModelPathsFor( string knifeId )
 	{
-		// katana/katana.vmdl is the one model on this install that has BOTH
-		// the .vmdl AND its .vmat + textures fully downloaded — verified by
-		// listing the local download cache. Everything else either errors out
-		// or renders as the engine's checker-pattern (missing materials).
-		// Use it as the universal knife until other packages are properly
-		// installed via S&box's Library Manager.
+		// Priority 1: the katana asset — has all its textures locally; will
+		// render the moment the user installs the matching package via S&box
+		// Library Manager.
+		// Final fallback: engine-shipped box.vmdl so we always render *something*.
 		return new[] { "katana/katana.vmdl", "models/dev/box.vmdl" };
 	}
 
