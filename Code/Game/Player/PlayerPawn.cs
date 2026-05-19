@@ -173,11 +173,8 @@ public sealed class PlayerPawn : Component
 		float drop = control * friction * Time.Delta;
 		float newSpeed = MathF.Max( 0f, speed - drop );
 
-		if ( !MathF.Abs( newSpeed - speed ).AlmostEqual( 0f, 0.001f ) )
-		{
-			float scale = newSpeed / speed;
-			cc.Velocity = new Vector3( horizontal.x * scale, horizontal.y * scale, cc.Velocity.z );
-		}
+		float scale = newSpeed / speed;
+		cc.Velocity = new Vector3( horizontal.x * scale, horizontal.y * scale, cc.Velocity.z );
 	}
 
 	private void AccelerateSource( CharacterController cc, Vector3 wishDir, float wishSpeed, float accel )
