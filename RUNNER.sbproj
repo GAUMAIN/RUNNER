@@ -6,7 +6,10 @@
   "Schema": 1,
   "IncludeSourceFiles": false,
   "Resources": "/Assets/*",
-  "PackageReferences": [],
+  "PackageReferences": [
+    "facepunch.v_first_person_arms_citizen",
+    "facepunch.v_first_person_arms_human"
+  ],
   "EditorReferences": null,
   "Mounts": null,
   "IsStandaloneOnly": false,
