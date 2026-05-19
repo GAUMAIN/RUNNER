@@ -41,11 +41,11 @@ public sealed class PlayerPawn : Component
 	/// <summary>sv_friction equivalent. Higher = sharper stops. CS2 ≈ 5.2.</summary>
 	[Property, Range( 1f, 20f )] public float GroundFriction { get; set; } = 5f;
 
-	/// <summary>sv_airaccelerate equivalent. CS2 ≈ 12.</summary>
-	[Property, Range( 1f, 100f )] public float AirAccelRate { get; set; } = 12f;
+	/// <summary>sv_airaccelerate equivalent. CS2 ≈ 12 — we run higher for more responsive air control.</summary>
+	[Property, Range( 1f, 100f )] public float AirAccelRate { get; set; } = 28f;
 
-	/// <summary>Max wish-speed cap while airborne. Letting it stay low enables bhop / air-strafe gains. CS2 ≈ 30.</summary>
-	[Property] public float MaxAirWishSpeed { get; set; } = 30f;
+	/// <summary>Max wish-speed cap while airborne. Higher = more direct strafe control. CS2 default 30.</summary>
+	[Property] public float MaxAirWishSpeed { get; set; } = 120f;
 
 	/// <summary>sv_stopspeed equivalent. Below this speed friction uses this value as the multiplier baseline — gives the snappy counter-strafe stop.</summary>
 	[Property] public float StopSpeed { get; set; } = 100f;
