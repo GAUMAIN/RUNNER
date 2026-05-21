@@ -91,6 +91,14 @@ public sealed class PlayerPawn : Component
 		{
 			GameObject.Components.Create<FpsViewmodel>();
 		}
+
+		// Ambient sound loops per zone (Hub/L1/L2/L3/L4) — also local-owner
+		// only. Each client computes their own zone based on their player's
+		// world position, no networking needed.
+		if ( !IsProxy && GameObject.Components.Get<Runner.Audio.AmbientZoneAudio>() is null )
+		{
+			GameObject.Components.Create<Runner.Audio.AmbientZoneAudio>();
+		}
 	}
 
 	/// <summary>Instant TP back to the captured spawn point. Called on death-by-fall and by cash-out pads.</summary>
