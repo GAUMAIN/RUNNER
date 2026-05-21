@@ -313,6 +313,16 @@ public sealed class PlayerPawn : Component
 		EyeAngles = ee;
 	}
 
+	// ─── FOV pulse (speed feel) ───────────────────────────────────────────
+	// Base FOV comes from UserSettings; we add up to +SpeedFovBoost degrees as
+	// the player accelerates between SpeedFovMin and SpeedFovMax units/sec,
+	// then ease the camera FOV toward that target so it doesn't jitter.
+
+	[Property, Range( 0f, 30f )] public float SpeedFovBoost { get; set; } = 12f;
+	[Property] public float SpeedFovMin { get; set; } = 300f;
+	[Property] public float SpeedFovMax { get; set; } = 900f;
+	[Property, Range( 0.5f, 20f )] public float FovLerpSpeed { get; set; } = 6f;
+
 	private void DriveCamera()
 	{
 		var cam = Scene.GetAllComponents<CameraComponent>().FirstOrDefault();
@@ -331,6 +341,18 @@ public sealed class PlayerPawn : Component
 			cam.WorldPosition = WorldPosition + lookDir.Backward * 300f + Vector3.Up * 75f;
 			cam.WorldRotation = lookDir;
 		}
+
+		// Speed-driven FOV pulse.
+		float speed = 0f;
+		var cc = GameObject.Components.Get<CharacterController>();
+		if ( cc.IsValid() )
+			speed = cc.Velocity.WithZ( 0 ).Length;
+
+		float t = MathX.Clamp( (speed - SpeedFovMin) / MathF.Max( SpeedFovMax - SpeedFovMin, 1f ), 0f, 1f );
+		float targetFov = UserSettings.BaseFov + t * SpeedFovBoost;
+		// Ease toward the target instead of snapping — looks like the camera
+		// "breathes" with your speed.
+		cam.FieldOfView = MathX.Lerp( cam.FieldOfView, targetFov, MathF.Min( 1f, FovLerpSpeed * Time.Delta ) );
 	}
 
 	private void RotateBodyToVelocity()
