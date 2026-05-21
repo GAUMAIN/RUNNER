@@ -1,0 +1,15 @@
+{
+  "UI": true,
+  "Volume": "1.0",
+  "Pitch": "1.0",
+  "Decibels": 60,
+  "SelectionMode": "Random",
+  "Sounds": [
+    "sounds/ambience/cliffs-wind-loop.vsnd"
+  ],
+  "DistanceAttenuation": false,
+  "Occlusion": false,
+  "AirAbsorption": false,
+  "Transmission": false,
+  "__version": 1
+}

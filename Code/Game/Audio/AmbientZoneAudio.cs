@@ -35,14 +35,16 @@ public sealed class AmbientZoneAudio : Component
 
 	private enum Zone { None, Hub, L1, L2, L3, L4 }
 
-	// Path → S&box core ambience loop. Empty string = silence for that zone.
+	// Path → SoundEvent .sound file in our Assets that wraps a core .vsnd
+	// ambience loop. Sound.Play needs a SoundEvent path, not a raw .vsnd —
+	// the .sound JSON is what registers the asset as a usable sound event.
 	private static string PathFor( Zone z ) => z switch
 	{
-		Zone.Hub => "sounds/ambience/forest-day-loop.vsnd",
-		Zone.L1  => "sounds/ambience/forest-day-loop.vsnd",
-		Zone.L2  => "sounds/ambience/plains-wind-loop.vsnd",
-		Zone.L3  => "sounds/ambience/cliffs-wind-loop.vsnd",
-		Zone.L4  => "sounds/ambience/cave-loop.vsnd",
+		Zone.Hub => "sounds/ambient/forest_day.sound",
+		Zone.L1  => "sounds/ambient/forest_day.sound",
+		Zone.L2  => "sounds/ambient/plains_wind.sound",
+		Zone.L3  => "sounds/ambient/cliffs_wind.sound",
+		Zone.L4  => "sounds/ambient/cave.sound",
 		_        => null,
 	};
 
