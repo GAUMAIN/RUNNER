@@ -29,7 +29,7 @@ public sealed class AmbientZoneAudio : Component
 	[Property, Range( 0.1f, 10f )] public float FadeDuration { get; set; } = 1.5f;
 
 	/// <summary>Peak volume of an ambient loop (before <see cref="UserSettings.Volume"/>).</summary>
-	[Property, Range( 0f, 1f )] public float MaxVolume { get; set; } = 0.45f;
+	[Property, Range( 0f, 1f )] public float MaxVolume { get; set; } = 0.11f;
 
 	// ─── Zone definition ──────────────────────────────────────────────────
 
