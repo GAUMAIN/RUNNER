@@ -12,6 +12,8 @@
 
 	<div class="speed-vignette" style="opacity: @(VignetteOpacity.ToString( "0.000", System.Globalization.CultureInfo.InvariantCulture ));"></div>
 
+	<div class="speed-lines" style="opacity: @(SpeedLinesOpacity.ToString( "0.000", System.Globalization.CultureInfo.InvariantCulture ));"></div>
+
 	<div class="level-up-flash @(IsFlashing ? "active" : "")"></div>
 
 	@if ( _stats.IsValid() )
@@ -151,6 +153,24 @@
 			float t = (_speed - VignetteStart) / (VignetteFull - VignetteStart);
 			if ( t > 1f ) t = 1f;
 			return t * MaxOpacity;
+		}
+	}
+
+	// Speed lines kick in later than the vignette — they're the "going fast"
+	// punch, not the "moving" cue. Capped lower so the screen never goes
+	// fully white at extreme speeds.
+	private const float SpeedLinesStart = 700f;
+	private const float SpeedLinesFull = 2500f;
+	private const float SpeedLinesMaxOpacity = 0.55f;
+
+	public float SpeedLinesOpacity
+	{
+		get
+		{
+			if ( _speed <= SpeedLinesStart ) return 0f;
+			float t = (_speed - SpeedLinesStart) / (SpeedLinesFull - SpeedLinesStart);
+			if ( t > 1f ) t = 1f;
+			return t * SpeedLinesMaxOpacity;
 		}
 	}
 

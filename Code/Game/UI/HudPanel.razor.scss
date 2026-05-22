@@ -95,6 +95,42 @@ HudPanel
 	}
 
 	// ───────────────────────────────────────────────────────────────────────
+	// Speed lines — radial white streaks emanating from center toward edges.
+	// Two conic-gradient layers at different angular offsets so the streaks
+	// read as dense motion blur rather than a tidy sunburst. Mask keeps the
+	// center clear so the player's aim point stays readable.
+	// ───────────────────────────────────────────────────────────────────────
+	.speed-lines
+	{
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		pointer-events: none;
+		background-image:
+			repeating-conic-gradient( from 0deg at 50% 50%,
+				rgba(255,255,255,0) 0deg,
+				rgba(255,255,255,0.55) 0.3deg,
+				rgba(255,255,255,0) 1.6deg,
+				rgba(255,255,255,0) 6deg ),
+			repeating-conic-gradient( from 17deg at 50% 50%,
+				rgba(255,255,255,0) 0deg,
+				rgba(255,255,255,0.35) 0.25deg,
+				rgba(255,255,255,0) 1.2deg,
+				rgba(255,255,255,0) 9deg );
+		mask-image: radial-gradient( circle at 50% 50%,
+			rgba(0,0,0,0) 18%,
+			rgba(0,0,0,0.85) 50%,
+			rgba(0,0,0,1) 75% );
+		-webkit-mask-image: radial-gradient( circle at 50% 50%,
+			rgba(0,0,0,0) 18%,
+			rgba(0,0,0,0.85) 50%,
+			rgba(0,0,0,1) 75% );
+		mix-blend-mode: screen;
+	}
+
+	// ───────────────────────────────────────────────────────────────────────
 	// Level-up flash — full-screen cyan flash that fades out on level up
 	// ───────────────────────────────────────────────────────────────────────
 	.level-up-flash
