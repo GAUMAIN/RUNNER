@@ -449,8 +449,30 @@ public sealed class FpsViewmodel : Component
 		_knifeRoot.Enabled = true;
 
 		var localRot = KnifeLocalRotation.ToRotation();
-		_knifeRoot.WorldRotation = handGo.WorldRotation * localRot;
-		_knifeRoot.WorldPosition = handGo.WorldPosition + handGo.WorldRotation * KnifeLocalOffset;
+
+		// If a swing is in progress, layer a slash arc on top of the rest
+		// pose: thrust the knife forward + pitch down through the strike
+		// window, then return. Bell curve so the motion ramps in/out smoothly.
+		var attack = GameObject.Components.Get<KnifeAttack>();
+		if ( attack.IsValid() && attack.IsSwinging )
+		{
+			float t = attack.SwingT;                       // 0 → 1
+			float ramp = MathF.Sin( t * MathF.PI );        // 0 → 1 → 0
+			float pitch = -90f * ramp;                     // pitch down hard at peak
+			float yaw   = (t - 0.5f) * 80f;                // sweep -40 → +40 across
+			float forwardPunch = 6f * ramp;                // shove forward at peak
+
+			localRot = localRot * Rotation.From( pitch, yaw, 0 );
+			_knifeRoot.WorldRotation = handGo.WorldRotation * localRot;
+			_knifeRoot.WorldPosition = handGo.WorldPosition
+				+ handGo.WorldRotation * (KnifeLocalOffset + new Vector3( forwardPunch, 0, 0 ));
+		}
+		else
+		{
+			_knifeRoot.WorldRotation = handGo.WorldRotation * localRot;
+			_knifeRoot.WorldPosition = handGo.WorldPosition + handGo.WorldRotation * KnifeLocalOffset;
+		}
+
 		_knifeRoot.WorldScale = Vector3.One * KnifeUniformScale;
 
 		// Subtle tint by rarity so each skin still reads differently. Pure white

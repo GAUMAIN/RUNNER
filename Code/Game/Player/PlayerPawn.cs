@@ -99,6 +99,13 @@ public sealed class PlayerPawn : Component
 		{
 			GameObject.Components.Create<Runner.Audio.AmbientZoneAudio>();
 		}
+
+		// Real weapon behavior on the knife: Mouse1 swings + sphere-traces
+		// forward + applies damage / impulse to whatever it hits.
+		if ( !IsProxy && GameObject.Components.Get<KnifeAttack>() is null )
+		{
+			GameObject.Components.Create<KnifeAttack>();
+		}
 	}
 
 	/// <summary>Instant TP back to the captured spawn point. Called on death-by-fall and by cash-out pads.</summary>
