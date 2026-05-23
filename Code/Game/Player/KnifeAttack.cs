@@ -138,20 +138,20 @@ public sealed class KnifeAttack : Component
 		{
 			var name = current.Name ?? string.Empty;
 			if ( name.StartsWith( "Platform_" ) || name.StartsWith( "L1_" ) || name == "Plaza_Hub" || name.StartsWith( "Hub_" ) || name == "CashOutPad" )
-				path = "sounds/Impacts/Melee/impact-melee-grass.sound";
+				path = "sounds/impacts/melee/impact-melee-grass.sound";
 			else if ( name.StartsWith( "L2_" ) )
-				path = "sounds/Impacts/Melee/impact-melee-dirt.sound";
+				path = "sounds/impacts/melee/impact-melee-dirt.sound";
 			else if ( name.StartsWith( "L3_" ) )
-				path = "sounds/Impacts/Melee/impact-melee-wood.sound";
+				path = "sounds/impacts/melee/impact-melee-wood.sound";
 			else if ( name.StartsWith( "L4_" ) )
-				path = "sounds/Impacts/Melee/impact-melee-metal.sound";
+				path = "sounds/impacts/melee/impact-melee-metal.sound";
 
 			current = current.Parent;
 			depth++;
 		}
 
 		// Default to concrete if we couldn't classify.
-		path ??= "sounds/Impacts/Melee/impact-melee-concrete.sound";
+		path ??= "sounds/impacts/melee/impact-melee-concrete.sound";
 
 		var handle = Sound.Play( path, pos );
 		if ( handle is not null )
