@@ -45,8 +45,15 @@ public sealed class FpsViewmodel : Component
 	// Default asset paths — loaded lazily in BuildViewmodel if the Property is
 	// still null, so the component works out of the box without any inspector
 	// wiring while still letting designers override.
+	//
+	// Animgraph priority:
+	//   1. models/knife/quickknife.vanmgrph — knife-specific (slash, idle,
+	//      inspect, holster) — locally cached, fully wired for melee.
+	//   2. models/first_person/v_first_person_arms_punching.vanmgrph — generic
+	//      punching as a fallback if the knife one isn't mounted.
 	private const string DefaultArmsModelPath = "models/first_person/v_first_person_arms_citizen.vmdl";
-	private const string DefaultArmsGraphPath = "models/first_person/v_first_person_arms_punching.vanmgrph";
+	private const string PrimaryArmsGraphPath  = "models/knife/quickknife.vanmgrph";
+	private const string FallbackArmsGraphPath = "models/first_person/v_first_person_arms_punching.vanmgrph";
 
 	// ─── Camera anchor offsets (tuneable in inspector) ────────────────────
 
@@ -172,11 +179,12 @@ public sealed class FpsViewmodel : Component
 		_arms.RenderOptions.Game = !UseOverlayRender;
 		_arms.RenderType = ModelRenderer.ShadowRenderType.Off;
 
-		// Try the assigned animgraph first; fall back to the punching graph the
-		// Facepunch FPS arms ship with. If neither resolves, the model's baked
-		// default animgraph plays (idle pose).
+		// Try the assigned animgraph first; then the knife-specific quickknife
+		// graph; then the generic punching graph. If nothing resolves, the
+		// model's baked default plays (idle bind pose).
 		var graph = ArmsAnimationGraph
-			?? ResourceLibrary.Get<AnimationGraph>( DefaultArmsGraphPath );
+			?? ResourceLibrary.Get<AnimationGraph>( PrimaryArmsGraphPath )
+			?? ResourceLibrary.Get<AnimationGraph>( FallbackArmsGraphPath );
 		if ( graph is not null )
 		{
 			_arms.AnimationGraph = graph;
@@ -184,7 +192,7 @@ public sealed class FpsViewmodel : Component
 		}
 		else
 		{
-			Log.Info( "[FpsViewmodel] No animgraph — model's baked default will play (idle)." );
+			Log.Warning( $"[FpsViewmodel] No animgraph mounted — tried '{PrimaryArmsGraphPath}' and '{FallbackArmsGraphPath}'. Model's baked default will play (likely T-pose)." );
 		}
 
 		// Knife — plain ModelRenderer (not skinned) glued to the arms' weapon_root

@@ -150,6 +150,18 @@ public sealed class PlayerStats : Component
 			{
 				Log.Info( $"[Runner] No saved profile, starting fresh." );
 			}
+
+			// Every player gets a starter knife visible from frame 1 — the
+			// katana is the only model that actually mounts on this install,
+			// so we equip it by default if nothing else is set.
+			if ( string.IsNullOrEmpty( EquippedKnifeId ) )
+			{
+				EquippedKnifeId = "katana";
+				if ( !OwnsKnife( "katana" ) )
+					OwnedKnivesCsv = string.IsNullOrEmpty( OwnedKnivesCsv ) ? "katana" : OwnedKnivesCsv + ",katana";
+				_dirty = true;
+				Log.Info( "[Runner] Auto-equipped starter katana." );
+			}
 		}
 		catch ( Exception ex )
 		{
