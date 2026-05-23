@@ -161,6 +161,16 @@ public sealed class PlayerPawn : Component
 		AnimationHelper.MoveStyle = IsSprinting
 			? CitizenAnimationHelper.MoveStyles.Run
 			: CitizenAnimationHelper.MoveStyles.Walk;
+
+		// Katana is a melee weapon — set the citizen rig to hold it 2-handed
+		// in a swing-ready stance so the body's built-in melee idle anim plays
+		// (citizen@melee_weapons_2h_pose_standing).
+		var stats = GameObject.Components.Get<PlayerStats>();
+		bool hasKnife = stats.IsValid() && !string.IsNullOrEmpty( stats.EquippedKnifeId );
+		AnimationHelper.HoldType = hasKnife
+			? CitizenAnimationHelper.HoldTypes.Swing
+			: CitizenAnimationHelper.HoldTypes.None;
+		AnimationHelper.Handedness = CitizenAnimationHelper.Hand.Both;
 	}
 
 	protected override void OnFixedUpdate()

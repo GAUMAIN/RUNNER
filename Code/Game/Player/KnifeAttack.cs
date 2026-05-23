@@ -75,7 +75,26 @@ public sealed class KnifeAttack : Component
 		_timeSinceSwing = 0f;
 
 		PlaySwingSound();
+		TriggerAttackAnimation();
 		DoHitDetection();
+	}
+
+	/// <summary>
+	/// Trigger the citizen rig's built-in melee attack animation
+	/// (citizen@melee_weapons_2h_attack_01) via the animgraph parameters.
+	/// Splats common param names since we don't have the animgraph open to
+	/// know exactly which one drives the attack.
+	/// </summary>
+	private void TriggerAttackAnimation()
+	{
+		var anim = GameObject.Components.Get<Sandbox.Citizen.CitizenAnimationHelper>( true );
+		if ( !anim.IsValid() || !anim.Target.IsValid() )
+			return;
+
+		anim.Target.Set( "b_attack", true );
+		anim.Target.Set( "b_swing", true );
+		anim.Target.Set( "attack", true );
+		anim.Target.Set( "holdtype_attack", 1 );
 	}
 
 	private void PlaySwingSound()
