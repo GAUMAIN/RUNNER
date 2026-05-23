@@ -84,13 +84,12 @@ public sealed class PlayerPawn : Component
 		_spawnPosition = WorldPosition;
 		_spawnCaptured = true;
 
-		// Ensure an FpsViewmodel component exists on the local player so the
-		// 1st-person arms + knife render properly. Proxies skip this — they
-		// don't render a viewmodel for other players.
-		if ( !IsProxy && GameObject.Components.Get<FpsViewmodel>() is null )
-		{
-			GameObject.Components.Create<FpsViewmodel>();
-		}
+		// FpsViewmodel was the camera-anchored arms viewmodel we used before
+		// pivoting to citizen-body-in-FPS. We no longer auto-create it. If a
+		// stale instance is present from a previous session, disable it so it
+		// doesn't overlap with the citizen body's arms.
+		var stale = GameObject.Components.Get<FpsViewmodel>();
+		if ( stale.IsValid() ) stale.Enabled = false;
 
 		// Ambient sound loops per zone (Hub/L1/L2/L3/L4) — also local-owner
 		// only. Each client computes their own zone based on their player's
@@ -120,6 +119,58 @@ public sealed class PlayerPawn : Component
 			cc.Velocity = Vector3.Zero;
 	}
 
+	// Cached head-related bone indices on the citizen rig — collapsed to
+	// zero scale in OnPreRender when we're in 1st person so the camera at
+	// eye height doesn't render the inside of the skull.
+	private int[] _hideInFpsBoneIndices;
+
+	private void EnsureHeadBonesCached()
+	{
+		if ( _hideInFpsBoneIndices is not null ) return;
+		if ( !BodyRenderer.IsValid() || BodyRenderer.Model is null ) return;
+
+		BodyRenderer.CreateBoneObjects = true;
+		var found = new System.Collections.Generic.List<int>();
+		int n = BodyRenderer.Model.BoneCount;
+		for ( int i = 0; i < n; i++ )
+		{
+			var o = BodyRenderer.GetBoneObject( i );
+			if ( !o.IsValid() ) continue;
+			var nm = (o.Name ?? string.Empty).ToLowerInvariant();
+			if ( nm.Contains( "head" )
+				|| nm.Contains( "jaw" )
+				|| nm.Contains( "eye_" )
+				|| nm.Contains( "teeth" )
+				|| nm == "neck_1" )
+			{
+				found.Add( i );
+			}
+		}
+		_hideInFpsBoneIndices = found.ToArray();
+		Log.Info( $"[PlayerPawn] Cached {_hideInFpsBoneIndices.Length} head bones to hide in FPS." );
+	}
+
+	/// <summary>
+	/// Runs after the animgraph has computed bone transforms for this frame —
+	/// any LocalScale we write here sticks for rendering instead of being
+	/// overwritten by the animation pass.
+	/// </summary>
+	protected override void OnPreRender()
+	{
+		if ( IsProxy ) return;
+		if ( !BodyRenderer.IsValid() ) return;
+
+		EnsureHeadBonesCached();
+		if ( _hideInFpsBoneIndices is null ) return;
+
+		var scale = FirstPerson ? Vector3.Zero : Vector3.One;
+		foreach ( var i in _hideInFpsBoneIndices )
+		{
+			var o = BodyRenderer.GetBoneObject( i );
+			if ( o.IsValid() ) o.LocalScale = scale;
+		}
+	}
+
 	protected override void OnUpdate()
 	{
 		if ( !IsProxy )
@@ -132,11 +183,12 @@ public sealed class PlayerPawn : Component
 			if ( !Mouse.Visible && Input.Pressed( "View" ) )
 				FirstPerson = !FirstPerson;
 
-			// Hide our own body in 1st person so the camera isn't inside the head.
+			// Citizen body now renders in BOTH 1st and 3rd person — its melee
+			// animations (citizen@melee_weapons_2h_*) drive both views. The
+			// head bone is collapsed below in OnPreRender when in FPS so the
+			// camera (at eye height) doesn't end up inside the skull.
 			if ( BodyRenderer.IsValid() )
-				BodyRenderer.RenderType = FirstPerson
-					? ModelRenderer.ShadowRenderType.ShadowsOnly
-					: ModelRenderer.ShadowRenderType.On;
+				BodyRenderer.RenderType = ModelRenderer.ShadowRenderType.On;
 		}
 
 		RotateBodyToVelocity();
