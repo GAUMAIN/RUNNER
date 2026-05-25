@@ -462,7 +462,8 @@ public sealed class FpsViewmodel : Component
 		// pose: thrust the knife forward + pitch down through the strike
 		// window, then return. Bell curve so the motion ramps in/out smoothly.
 		var attack = GameObject.Components.Get<KnifeAttack>();
-		if ( attack.IsValid() && attack.IsSwinging )
+		bool isSwinging = attack.IsValid() && attack.IsSwinging;
+		if ( isSwinging )
 		{
 			float t = attack.SwingT;                       // 0 → 1
 			float ramp = MathF.Sin( t * MathF.PI );        // 0 → 1 → 0
@@ -480,6 +481,13 @@ public sealed class FpsViewmodel : Component
 			_knifeRoot.WorldRotation = handGo.WorldRotation * localRot;
 			_knifeRoot.WorldPosition = handGo.WorldPosition + handGo.WorldRotation * KnifeLocalOffset;
 		}
+
+		// Drive the FPS arms' shoulder/elbow/wrist bones so the HAND moves
+		// with the knife during a swing — otherwise the arms stay locked in
+		// T-pose and only the knife mesh swings, which looks broken.
+		// Works because we have no animgraph; LocalRotation we write here is
+		// the only thing the skinned mesh sees.
+		AnimateArmDuringSwing( isSwinging, attack );
 
 		_knifeRoot.WorldScale = Vector3.One * KnifeUniformScale;
 
@@ -566,6 +574,66 @@ public sealed class FpsViewmodel : Component
 			: Sound.Play( "sounds/kenney/ui/ui.button.press.sound" );
 		if ( handle is not null )
 			handle.Volume *= Runner.Config.UserSettings.Volume;
+	}
+
+	// ─── Arm bone animation during swing ─────────────────────────────────
+	// We drive arm_upper_R + arm_lower_R + hand_R LocalRotation to make the
+	// HAND visibly move with the knife during a swing. Without an animgraph
+	// the bones sit in bind pose (T-pose) — modifying LocalRotation each
+	// frame is what gets the skinned mesh to deform along with the slash.
+	//
+	// The angles below are hand-tuned for a downward slash motion:
+	//   shoulder pitches down 50° at the peak of the swing
+	//   elbow extends another 40°
+	//   wrist tilts 30° to follow the blade
+	// All ease in/out via a sine bell so the motion doesn't snap.
+
+	private GameObject _armUpperR;
+	private GameObject _armLowerR;
+	private GameObject _handR;
+	private bool _armBonesCached;
+
+	private void CacheArmBones()
+	{
+		if ( _armBonesCached ) return;
+		if ( !_arms.IsValid() || _arms.Model is null ) return;
+
+		int n = _arms.Model.BoneCount;
+		for ( int i = 0; i < n; i++ )
+		{
+			var o = _arms.GetBoneObject( i );
+			if ( !o.IsValid() ) continue;
+			if ( o.Name == "arm_upper_R" )      _armUpperR = o;
+			else if ( o.Name == "arm_lower_R" ) _armLowerR = o;
+			else if ( o.Name == "hand_R" )      _handR     = o;
+		}
+		_armBonesCached = true;
+		Log.Info( $"[FpsViewmodel] Arm bones cached: upper={_armUpperR.IsValid()} lower={_armLowerR.IsValid()} hand={_handR.IsValid()}" );
+	}
+
+	private void AnimateArmDuringSwing( bool isSwinging, KnifeAttack attack )
+	{
+		CacheArmBones();
+
+		if ( isSwinging && attack.IsValid() )
+		{
+			float t = attack.SwingT;
+			float ramp = MathF.Sin( t * MathF.PI );        // 0 → 1 → 0
+
+			if ( _armUpperR.IsValid() )
+				_armUpperR.LocalRotation = Rotation.From( -50f * ramp, 10f * ramp, 0f );
+			if ( _armLowerR.IsValid() )
+				_armLowerR.LocalRotation = Rotation.From( -40f * ramp, 0f, 0f );
+			if ( _handR.IsValid() )
+				_handR.LocalRotation = Rotation.From( -30f * ramp, 0f, 0f );
+		}
+		else
+		{
+			// Idle: back to bind pose.
+			if ( _armUpperR.IsValid() ) _armUpperR.LocalRotation = Rotation.Identity;
+			if ( _armLowerR.IsValid() ) _armLowerR.LocalRotation = Rotation.Identity;
+			if ( _handR.IsValid() )     _handR.LocalRotation     = Rotation.Identity;
+		}
 	}
 
 	// Subtle rarity tint blended onto the real material — keeps the metal feel.
