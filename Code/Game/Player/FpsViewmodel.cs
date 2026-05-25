@@ -613,26 +613,25 @@ public sealed class FpsViewmodel : Component
 
 	private void AnimateArmDuringSwing( bool isSwinging, KnifeAttack attack )
 	{
-		CacheArmBones();
+		if ( !_arms.IsValid() ) return;
 
-		if ( isSwinging && attack.IsValid() )
+		// Use S&box's IK system: SetIk("hand_right", targetWorldTransform)
+		// tells the rig to bend the arm so the right hand reaches the given
+		// world transform. The Citizen rig + this FPS arms rig both expose
+		// "hand_right" / "hand_left" IK targets (same convention as
+		// CitizenAnimationHelper). The engine handles the bone math.
+		//
+		// During swing we IK-target the knife's current world position so
+		// the hand glues to it through the slash arc. When idle we clear
+		// the IK so the arm goes back to its rest/animgraph pose.
+		if ( isSwinging && attack.IsValid() && _knifeRoot.IsValid() )
 		{
-			float t = attack.SwingT;
-			float ramp = MathF.Sin( t * MathF.PI );        // 0 → 1 → 0
-
-			if ( _armUpperR.IsValid() )
-				_armUpperR.LocalRotation = Rotation.From( -50f * ramp, 10f * ramp, 0f );
-			if ( _armLowerR.IsValid() )
-				_armLowerR.LocalRotation = Rotation.From( -40f * ramp, 0f, 0f );
-			if ( _handR.IsValid() )
-				_handR.LocalRotation = Rotation.From( -30f * ramp, 0f, 0f );
+			var ikTarget = new global::Transform( _knifeRoot.WorldPosition, _knifeRoot.WorldRotation );
+			_arms.SetIk( "hand_right", ikTarget );
 		}
 		else
 		{
-			// Idle: back to bind pose.
-			if ( _armUpperR.IsValid() ) _armUpperR.LocalRotation = Rotation.Identity;
-			if ( _armLowerR.IsValid() ) _armLowerR.LocalRotation = Rotation.Identity;
-			if ( _handR.IsValid() )     _handR.LocalRotation     = Rotation.Identity;
+			_arms.ClearIk( "hand_right" );
 		}
 	}
 
